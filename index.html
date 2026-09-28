@@ -1,0 +1,998 @@
+<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>body{margin:0}</style></head><body>
+<title>Loop Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&family=Secular+One&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#12161f;--panel:#1a1f2b;--panel2:#222938;--pad:#262d3c;--pad2:#2f3749;--line:#343c50;
+  --text:#e9ecf3;--muted:#8e97ab;--brass:#dcab4a;--brass-ink:#1c1606;
+  --ct:#dcab4a;--tn:#5fd0c8;--av:#ff6b5e;
+  --safe:#7fcf94;--color:#f0a35a;--out:#b18cf2;
+  --ivory:#e7e3d8;--ebony:#161a23;--wood:#2a2219;--wire:#b9b2a3;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:"Rubik",system-ui,sans-serif;font-size:15px}
+.app{max-width:1120px;margin:0 auto;padding-inline:16px;padding-block:18px 60px;display:flex;flex-direction:column;gap:14px}
+h1{font-family:"Secular One","Rubik",sans-serif;font-weight:400;font-size:28px;margin:0;letter-spacing:.2px;text-wrap:balance}
+h1 .brand{font-family:"Secular One","Rubik",sans-serif;direction:ltr;unicode-bidi:isolate;color:var(--brass);letter-spacing:.5px}
+h1 .tag{display:block;font-family:"Rubik",sans-serif;font-size:15px;color:var(--text);font-weight:500;margin-top:2px;letter-spacing:0}
+h2{font-size:12px;letter-spacing:1.6px;color:var(--muted);font-weight:500;margin:0;text-transform:uppercase}
+.mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.head p{margin:4px 0 0;color:var(--muted);font-size:14px;max-width:62ch;line-height:1.5}
+.clock{display:flex;gap:16px;font-family:"JetBrains Mono",monospace;font-size:13px;color:var(--muted)}
+.clock b{color:var(--text);font-size:16px;display:block}
+button{font:inherit;color:inherit;touch-action:manipulation}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+select,input[type=text],input[type=number]{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:6px 8px;font:inherit;font-size:14px}
+input[type=range]{accent-color:var(--brass)}
+
+/* transport */
+.transport{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:color-mix(in srgb,var(--panel) 94%,transparent);backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:14px;padding:10px 12px;display:flex;flex-wrap:wrap;align-items:center;gap:10px 12px}
+.play{width:58px;height:58px;border-radius:50%;border:0;background:var(--brass);color:var(--brass-ink);display:grid;place-items:center;cursor:pointer;flex:none}
+.play svg{width:24px;height:24px}
+.tempo{display:flex;align-items:center;gap:6px}
+.bpm{font-family:"JetBrains Mono",monospace;font-size:32px;font-weight:700;min-width:3ch;text-align:center;line-height:1}
+.bpm small{display:block;font-size:10px;color:var(--muted);letter-spacing:1.2px;font-weight:500;margin-top:3px}
+.ibtn{min-width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--text);font-weight:500;cursor:pointer;padding:0 10px}
+.ibtn:hover{border-color:var(--muted)}
+.ibtn.on{background:var(--brass);color:var(--brass-ink);border-color:var(--brass)}
+#bpmRange{width:130px}
+.tsel{display:flex;flex-direction:column;gap:2px}
+.lbl{font-size:12px;color:var(--muted)}
+.group{display:flex;gap:4px;background:var(--panel2);padding:4px;border-radius:12px;border:1px solid var(--line);flex-wrap:wrap}
+.group button{border:0;background:transparent;border-radius:8px;padding:7px 11px;cursor:pointer;font-weight:500;min-width:40px}
+.group button.on{background:var(--brass);color:var(--brass-ink)}
+.status{margin-inline-start:auto;display:flex;align-items:center;gap:10px}
+.beats{display:flex;gap:5px;direction:ltr;align-items:center}
+.beats i{width:13px;height:13px;border-radius:50%;background:var(--pad2)}
+.beats i.on{background:var(--brass)}
+.beats i.one.on{background:#fff}
+.beats i.and{width:6px;height:6px;background:var(--line)}
+.beats i.and.on{background:var(--tn)}
+.seg{font-size:13px;color:var(--muted);min-width:96px;text-align:center;padding:5px 10px;border-radius:999px;border:1px solid var(--line);white-space:nowrap}
+.seg.play{color:var(--text);background:var(--pad2);width:auto;height:auto;display:inline-block}
+.seg.count{color:var(--brass-ink);background:var(--brass);border-color:var(--brass)}
+.seg.solo{color:#10131a;background:var(--tn);border-color:var(--tn)}
+.bartxt{font-family:"JetBrains Mono",monospace;font-size:15px;font-weight:700;min-width:4ch;text-align:center}
+
+/* cards */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px}
+.cardhead{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-bottom:12px}
+.cardhead .sp{flex:1}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+.chip{border:1px solid var(--line);background:transparent;font-size:13px;border-radius:999px;padding:6px 12px;cursor:pointer}
+.chip.on{background:var(--brass);border-color:var(--brass);color:var(--brass-ink)}
+.act{border:1px solid var(--line);background:transparent;font-size:14px;border-radius:10px;padding:7px 12px;cursor:pointer}
+.act:hover{background:var(--panel2)}
+.act.warn{border-color:var(--av);color:var(--av)}
+.act.sure{background:var(--av);color:#fff}
+
+/* now */
+.nowtop{display:flex;align-items:stretch;gap:12px;flex-wrap:wrap}
+.cur{flex:1 1 260px;min-width:0}
+.curhead{display:flex;gap:10px;align-items:baseline}
+.rn{font-family:"JetBrains Mono",monospace;color:var(--muted);font-size:15px;direction:ltr;unicode-bidi:isolate}
+.sym{font-family:"Secular One","Rubik",sans-serif;font-size:56px;line-height:1.05;direction:ltr;text-align:right;letter-spacing:.5px}
+.ctx{font-size:13.5px;color:var(--muted);margin-top:2px}
+.nxt{flex:0 0 auto;min-width:150px;border:1px dashed var(--line);border-radius:12px;padding:10px 14px;display:flex;flex-direction:column;justify-content:center;gap:2px}
+.nxt .nsym{font-family:"Secular One","Rubik",sans-serif;font-size:28px;direction:ltr;text-align:right}
+.banners{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.banner{border-radius:10px;padding:8px 12px;font-size:14px;background:var(--panel2);border:1px solid var(--line);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.banner b{font-family:"Rubik",sans-serif}
+.banner .tag{font-size:11px;letter-spacing:1px;color:var(--muted)}
+.banner.solo{border-color:var(--tn)}
+.banner.target{border-color:#fff}
+.banner .nn{font-family:"Secular One",sans-serif;font-size:20px;direction:ltr}
+.viewtabs{display:flex;gap:4px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:4px;margin:14px 0 10px;width:max-content;max-width:100%}
+.viewtabs button{border:0;background:transparent;color:var(--muted);font-weight:500;font-size:14.5px;padding:7px 14px;border-radius:8px;cursor:pointer}
+.viewtabs button.on{background:var(--text);color:var(--bg)}
+.tiers{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.tier{border:1px solid var(--line);background:var(--panel2);border-radius:10px;padding:8px 10px;cursor:pointer;text-align:start;display:flex;flex-direction:column;gap:2px}
+.tier b{font-size:15px}
+.tier small{font-size:11.5px;color:var(--muted)}
+.tier[data-v=safe] b{color:var(--safe)}.tier[data-v=color] b{color:var(--color)}.tier[data-v=out] b{color:var(--out)}
+.tier.on[data-v=safe]{background:color-mix(in srgb,var(--safe) 18%,var(--panel2));border-color:var(--safe)}
+.tier.on[data-v=color]{background:color-mix(in srgb,var(--color) 18%,var(--panel2));border-color:var(--color)}
+.tier.on[data-v=out]{background:color-mix(in srgb,var(--out) 20%,var(--panel2));border-color:var(--out)}
+.opts{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.opt{border:1px solid var(--line);background:transparent;border-radius:999px;padding:6px 12px;cursor:pointer;font-size:14px}
+.opt.on{background:var(--text);color:var(--bg);border-color:var(--text)}
+.sinfo{margin-top:12px;display:flex;flex-direction:column;gap:6px}
+.sname{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.sname b{font-size:19px;font-weight:500}
+.sname .en{font-size:12.5px;color:var(--muted);direction:ltr}
+.check{font-size:12px;border-radius:999px;padding:2px 9px;border:1px solid var(--line);color:var(--muted)}
+.check.ok{color:var(--safe);border-color:color-mix(in srgb,var(--safe) 50%,transparent)}
+.check.outx{color:var(--out);border-color:color-mix(in srgb,var(--out) 50%,transparent)}
+.schar{font-size:14px;line-height:1.55;color:var(--text);max-width:75ch;margin:0}
+.swhy{font-size:13px;color:var(--muted);margin:0}
+.notes{display:flex;gap:6px;flex-wrap:wrap;direction:ltr;justify-content:flex-end;margin-top:4px}
+.nt{min-width:46px;border-radius:9px;padding:5px 6px 4px;text-align:center;background:var(--pad);border:1px solid var(--line)}
+.nt b{display:block;font-size:17px;font-weight:500}
+.nt small{display:block;font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--muted)}
+.nt.ct{background:color-mix(in srgb,var(--ct) 22%,var(--pad));border-color:var(--ct)}
+.nt.tn{background:color-mix(in srgb,var(--tn) 16%,var(--pad));border-color:color-mix(in srgb,var(--tn) 70%,transparent)}
+.nt.av{background:color-mix(in srgb,var(--av) 15%,var(--pad));border-color:color-mix(in srgb,var(--av) 70%,transparent)}
+.nt.dim{opacity:.3}
+.instbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:14px}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
+.legend i{display:inline-block;width:11px;height:11px;border-radius:50%;vertical-align:-1px;margin-inline-end:5px}
+.instr{margin-top:10px;overflow-x:auto;direction:ltr;border-radius:10px}
+.instr svg{display:block}
+.instr.keys svg{width:100%;height:auto;min-width:540px}
+.instr.guitar svg{min-width:640px;width:100%;height:auto}
+.looplist{display:flex;flex-direction:column;gap:8px}
+.loopitem{text-align:start;border:1px solid var(--line);background:var(--panel2);border-radius:10px;padding:10px 12px;cursor:pointer;display:flex;flex-direction:column;gap:3px}
+.loopitem.on{border-color:var(--brass);box-shadow:inset 0 0 0 1px var(--brass)}
+.loopitem b{font-size:15.5px;font-weight:500}
+.loopitem small{font-size:12.5px;color:var(--muted);line-height:1.45}
+.kind{font-size:11px;letter-spacing:.8px;border-radius:999px;padding:1px 8px;margin-inline-start:6px;vertical-align:1px}
+.kind.full{background:color-mix(in srgb,var(--safe) 22%,transparent);color:var(--safe)}
+.kind.pent{background:color-mix(in srgb,var(--tn) 20%,transparent);color:var(--tn)}
+.kind.partial{background:color-mix(in srgb,var(--color) 20%,transparent);color:var(--color)}
+.kind.blues{background:color-mix(in srgb,var(--out) 22%,transparent);color:var(--out)}
+
+/* strip */
+.pname{font-family:"Secular One",sans-serif;font-size:19px}
+.pkey{color:var(--muted);font-size:13.5px}
+.stripwrap{overflow-x:auto;direction:ltr;padding-bottom:4px;scrollbar-width:thin}
+.stripin{width:max-content;display:flex;flex-direction:column;gap:6px}
+.strip{display:flex;gap:6px}
+.bar{flex:none;background:var(--pad);border-radius:10px;padding:4px;display:flex;flex-direction:column;gap:3px;border:1px solid transparent}
+.bar.sel{border-color:#fff}
+.bn{font-family:"JetBrains Mono",monospace;font-size:10.5px;color:var(--muted);padding-inline-start:4px}
+.bch{display:flex;gap:3px}
+.tile{flex:1;min-width:0;border:1px solid var(--line);background:var(--panel2);border-radius:8px;padding:8px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;position:relative}
+.tile b{font-family:"Secular One","Rubik",sans-serif;font-weight:400;font-size:17px;white-space:nowrap}
+.tile small{direction:ltr;unicode-bidi:isolate;font-family:"JetBrains Mono",monospace;font-size:10.5px;color:var(--muted);white-space:nowrap}
+.tile.now{background:var(--brass);border-color:var(--brass);color:var(--brass-ink)}
+.tile.now small{color:color-mix(in srgb,var(--brass-ink) 70%,transparent)}
+.tile.next{border-color:var(--brass);border-style:dashed}
+.tile.view{box-shadow:0 0 0 2px #fff}
+.tile .nx{position:absolute;top:-8px;right:4px;font-size:9.5px;background:var(--bg);color:var(--brass);border-radius:4px;padding:0 4px}
+.guide{display:block}
+.scroller{display:flex;align-items:center;gap:8px;margin-top:6px;direction:ltr}
+.scroller input{flex:1;height:30px;margin:0}
+.scroller .lbl{direction:rtl;white-space:nowrap}
+.gnote{font-size:12.5px;color:var(--muted);margin:6px 0 0;line-height:1.5}
+.gnote i{display:inline-block;width:18px;height:3px;border-radius:2px;vertical-align:3px;margin-inline:4px}
+.editor{margin-top:12px;border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:10px}
+.edhead{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.edhead b{font-size:16px;margin-inline-end:6px}
+.edchord{background:var(--panel2);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:8px}
+.edrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.qchips{display:flex;gap:4px;flex-wrap:wrap;direction:ltr;justify-content:flex-end}
+.qchips button{border:1px solid var(--line);background:var(--pad);border-radius:8px;padding:5px 9px;cursor:pointer;font-size:13.5px;min-width:44px}
+.qchips button.on{background:var(--brass);color:var(--brass-ink);border-color:var(--brass)}
+
+/* settings */
+.field{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-top:1px solid var(--line);font-size:14px;flex-wrap:wrap}
+.field:first-of-type{border-top:0}
+.field .fl{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1 1 180px}
+.field .fl small{font-size:12px;color:var(--muted);line-height:1.4}
+.field input[type=number]{width:72px}
+.sw{position:relative;width:42px;height:24px;flex:none;display:inline-block}
+.sw input{opacity:0;position:absolute;inset:0;margin:0;cursor:pointer;z-index:1}
+.sw span{position:absolute;inset:0;background:var(--pad2);border-radius:999px;transition:.15s;border:1px solid var(--line)}
+.sw span::after{content:"";position:absolute;top:3px;right:3px;width:16px;height:16px;border-radius:50%;background:var(--muted);transition:.15s}
+.sw input:checked+span{background:var(--brass);border-color:var(--brass)}
+.sw input:checked+span::after{right:21px;background:var(--brass-ink)}
+.sw input:focus-visible+span{outline:2px solid var(--brass);outline-offset:2px}
+.sub{font-size:12px;color:var(--muted);margin:10px 0 6px}
+.mixrow{display:grid;grid-template-columns:78px 1fr 56px;align-items:center;gap:10px;padding:6px 0}
+.mixrow input{width:100%}
+.mixrow .mute{border:1px solid var(--line);background:transparent;border-radius:8px;padding:5px 0;cursor:pointer;font-size:12.5px}
+.mixrow .mute.on{background:var(--av);border-color:var(--av);color:#fff}
+.inl{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+
+/* library */
+.libtabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.libgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
+.lcard{text-align:start;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;display:flex;flex-direction:column;gap:5px}
+.lcard:hover,.lcard.on{border-color:var(--brass)}
+.lcard .t{font-weight:500;font-size:15px}
+.lcard .rr{font-family:"JetBrains Mono",monospace;font-size:11.5px;color:var(--muted);direction:ltr;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lcard .meta{font-size:12px;color:var(--muted);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.lv{display:inline-flex;gap:2px}
+.lv i{width:6px;height:6px;border-radius:50%;background:var(--line)}
+.lv i.f{background:var(--brass)}
+.saverow{display:flex;gap:6px;margin-top:10px}
+.saverow input{flex:1;min-width:0}
+.mine{display:flex;align-items:center;gap:6px;background:var(--panel2);border-radius:9px;padding:6px 6px 6px 10px}
+.mine .n{flex:1;cursor:pointer;padding-inline-start:4px}
+.empty{color:var(--muted);font-size:14px}
+
+/* glossary */
+details.card summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:10px}
+details.card summary::-webkit-details-marker{display:none}
+details.card summary::after{content:"+";font-size:20px;color:var(--muted)}
+details.card[open] summary::after{content:"−"}
+.gl{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px;margin-top:12px}
+.gi{background:var(--panel2);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:4px}
+.gi b{font-weight:500}
+.gi .f{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--brass);direction:ltr;text-align:right}
+.gi .ns{font-size:13px;direction:ltr;text-align:right;color:var(--text)}
+.gi p{margin:0;font-size:12.5px;color:var(--muted);line-height:1.45}
+.foot{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;font-size:12.5px;color:var(--muted)}
+.test{border-radius:999px;padding:4px 10px;border:1px solid var(--line)}
+.test.ok{color:var(--safe);border-color:color-mix(in srgb,var(--safe) 50%,transparent)}
+.test.bad{color:var(--av);border-color:var(--av)}
+kbd{font-family:"JetBrains Mono",monospace;background:var(--panel2);border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:11px}
+[hidden]{display:none!important}
+
+@media (max-width:560px){
+  h1{font-size:23px}
+  .head p{display:none}
+  .transport{gap:8px;padding:8px 10px}
+  .play{width:48px;height:48px}
+  .bpm{font-size:25px}
+  .ibtn{min-width:34px;height:34px;padding:0 8px}
+  #bpmRange{order:5;flex:1 1 140px;width:auto}
+  .status{order:6;margin-inline-start:0;gap:8px;width:100%;justify-content:space-between}
+  .sym{font-size:44px}
+  .tiers{grid-template-columns:1fr 1fr 1fr}
+  .tier small{display:none}
+  .libgrid{grid-template-columns:1fr 1fr}
+  .lcard{padding:8px 10px}
+  .lcard .t{font-size:13.5px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+
+<div class="app" dir="rtl">
+  <header class="head">
+    <div>
+      <h1><span class="brand">Loop Lab</span><span class="tag">מחולל לופים הרמוניים לתרגול אלתור</span></h1>
+      <p>בחרו מהלך מהספרייה או בנו אחד, לחצו נגן ואלתרו. לכל אקורד מוצגות שלוש שכבות של סולמות – בטוח, צבעוני ומחוץ לקופסה – על קלידים או על צוואר גיטרה.</p>
+    </div>
+    <div class="clock">
+      <div><b id="tElapsed">00:00</b>זמן תרגול</div>
+      <div><b id="tLoops">0</b>סבבים</div>
+    </div>
+  </header>
+
+  <section class="transport" aria-label="בקרת נגינה">
+    <button class="play" id="play" data-act="play" aria-label="נגן"><svg viewBox="0 0 24 24" id="playIcon"><path d="M7 4l13 8-13 8z" fill="currentColor"/></svg></button>
+    <div class="tempo">
+      <button class="ibtn" data-act="bpm-" aria-label="הורד טמפו">−</button>
+      <div class="bpm" aria-live="polite"><span id="bpmVal">120</span><small id="bpmUnit">BPM</small></div>
+      <button class="ibtn" data-act="bpm+" aria-label="העלה טמפו">+</button>
+      <button class="ibtn" data-act="tap">טאפ</button>
+    </div>
+    <input type="range" id="bpmRange" min="40" max="260" value="120" aria-label="טמפו">
+    <div class="tsel"><label class="lbl" for="keySel">טונליות</label><select id="keySel"></select></div>
+    <div class="group" id="meterSel" aria-label="משקל">
+      <button data-act="meter" data-v="4/4" class="mono">4/4</button><button data-act="meter" data-v="3/4" class="mono">3/4</button><button data-act="meter" data-v="6/8" class="mono">6/8</button>
+    </div>
+    <button class="ibtn" data-act="countIn" id="ciBtn" title="תיבת ספירה לפני ההתחלה">ספירה</button>
+    <button class="ibtn" data-act="loopT" id="loopBtn" title="לולאה חוזרת">לולאה</button>
+    <div class="status">
+      <span class="seg" id="segPill">עצור</span>
+      <div class="beats" id="beats"></div>
+      <span class="bartxt" id="barTxt">1/8</span>
+    </div>
+  </section>
+
+  <section class="card" id="nowCard" aria-label="האקורד הנוכחי והמלצות">
+    <div class="nowtop">
+      <div class="cur">
+        <div class="curhead"><span class="lbl">עכשיו</span><span class="rn" id="nRn"></span></div>
+        <div class="sym" id="nSym"></div>
+        <div class="ctx" id="nCtx"></div>
+      </div>
+      <div class="nxt"><span class="lbl">הבא – התכוננו</span><div class="nsym" id="xSym"></div><div class="rn" id="xRn"></div></div>
+    </div>
+    <div class="banners" id="banners"></div>
+    <div class="viewtabs" role="tablist">
+      <button data-act="view" data-v="chord" role="tab">לפי אקורד</button>
+      <button data-act="view" data-v="loop" role="tab">סולם אחד לכל הלופ</button>
+    </div>
+    <div id="tierBox"></div>
+    <div class="sinfo" id="sInfo"></div>
+    <div class="instbar">
+      <div class="group" id="instSel"><button data-act="inst" data-v="keys">קלידים</button><button data-act="inst" data-v="guitar">גיטרה</button></div>
+      <div class="legend"><span><i style="background:var(--ct)"></i>צליל אקורד</span><span><i style="background:var(--tn)"></i>טנשן</span><span><i style="background:var(--av)"></i>צליל הימנעות</span><span><i style="border:2px solid #fff;background:transparent"></i>צליל מטרה</span></div>
+    </div>
+    <div class="instr" id="instr"></div>
+  </section>
+
+  <section class="card">
+    <div class="cardhead">
+      <h2>המהלך</h2>
+      <span class="pname" id="pName"></span><span class="pkey" id="pKey"></span>
+      <span class="sp"></span>
+      <label class="inl lbl" for="homeSel">מרכז טונאלי <select id="homeSel"></select></label>
+      <button class="chip" data-act="chains" id="chainsBtn" title="דומיננט שעובר לדומיננט רבע למעלה נחשב פונקציונלי (ג׳אז)">שרשרת דומיננטים</button>
+      <button class="chip" data-act="follow" id="followBtn">מעקב אחרי הנגינה</button>
+      <button class="act" data-act="bar-append">+ תיבה</button>
+    </div>
+    <div class="stripwrap" id="stripWrap"><div class="stripin"><div class="strip" id="strip"></div><svg class="guide" id="guide"></svg></div></div>
+    <div class="scroller" id="scroller"><input type="range" id="stripScroll" min="0" max="1000" value="0" aria-label="גלילת המהלך"><span class="lbl">גלילה</span></div>
+    <p class="gnote">צלילי מנחה (טרצות וספטימות) בהובלה הקרובה ביותר:<i style="background:var(--tn)"></i>קול תחתון<i style="background:var(--brass)"></i>קול עליון · ½ = תנועה בחצי טון · = צליל משותף. הקישו על אקורד כדי לראות אותו ולערוך את התיבה.</p>
+    <div id="editor"></div>
+  </section>
+
+  <div class="two">
+    <section class="card" id="accCard"></section>
+    <section class="card" id="pracCard"></section>
+  </div>
+
+  <section class="card" id="libCard"></section>
+
+  <details class="card" id="glossary">
+    <summary><h2>ספריית הסולמות</h2></summary>
+    <div class="gl" id="glList"></div>
+  </details>
+
+  <footer class="foot">
+    <span class="test" id="testBadge">בדיקה עצמית…</span>
+    <span><kbd>רווח</kbd> נגן / עצור</span>
+  </footer>
+</div>
+
+<script id="theory">
+/* ================= THEORY ================= */
+const LET=['C','D','E','F','G','A','B'],LPC=[0,2,4,5,7,9,11];
+const mod=(n,m=12)=>((n%m)+m)%m;
+const DGC={};
+function dg(s){if(DGC[s])return DGC[s];const m=/^(bb|b|##|#)?(\d+)$/.exec(s);if(!m)throw Error('deg '+s);const a=m[1]?{b:-1,bb:-2,'#':1,'##':2}[m[1]]:0;const n=+m[2];const d=(n-1)%7;return DGC[s]={d,n,s:LPC[d]+a+12*Math.floor((n-1)/7)};}
+const pc=n=>mod(LPC[n.l]+n.a);
+function spell(r,s){const g=dg(s);const l=(r.l+g.d)%7;let a=mod(pc(r)+g.s-LPC[l]);if(a>6)a-=12;return{l,a};}
+function byPc(p,flat){p=mod(p);for(let l=0;l<7;l++)if(LPC[l]===p)return{l,a:0};for(let l=0;l<7;l++){if(flat&&mod(LPC[l]-1)===p)return{l,a:-1};if(!flat&&mod(LPC[l]+1)===p)return{l,a:1};}}
+const simp=(n,flat)=>Math.abs(n.a)>=2?byPc(pc(n),flat===undefined?n.a<0:flat):n;
+const ACC={'-2':'𝄫','-1':'♭','0':'','1':'♯','2':'𝄪'};
+function nm(n){if(Math.abs(n.a)>2)n=byPc(pc(n),n.a<0);return LET[n.l]+ACC[n.a];}
+const acc2=s=>s.replace(/bb/g,'𝄫').replace(/##/g,'𝄪').replace(/b/g,'♭').replace(/#/g,'♯');
+
+const SC={
+ionian:{he:'יוני (מז׳ור)',en:'Ionian',f:'1 2 3 4 5 6 7',h:1,c:'יציב, מואר ושלם – הבית הטונאלי. ה-4 מתנגש בטרצה, לכן לא נחים עליו.'},
+dorian:{he:'דורי',en:'Dorian',f:'1 2 b3 4 5 6 b7',h:1,c:'מינור עם 6 גדולה – חם, גרובי ולא טרגי. ה-13 הוא הצבע המזהה.'},
+phrygian:{he:'פריגי',en:'Phrygian',f:'1 b2 b3 4 5 b6 b7',h:1,c:'כהה ומתוח; ה-♭2 נותן צבע ספרדי-מזרחי. מעל m7 ה-♭9 הוא צליל הימנעות.'},
+lydian:{he:'לידי',en:'Lydian',f:'1 2 3 #4 5 6 7',h:1,c:'צבע מרחף ובהיר בגלל ה-♯4 – מז׳ור בלי כובד ובלי צליל הימנעות.'},
+mixolydian:{he:'מיקסולידי',en:'Mixolydian',f:'1 2 3 4 5 6 b7',h:1,c:'מז׳ור עם ♭7 – רוק, בלוז ופאנק. ה-4 (11) הוא צליל ההימנעות.'},
+aeolian:{he:'אאולי (מינור טבעי)',en:'Aeolian',f:'1 2 b3 4 5 b6 b7',h:1,c:'מינור טבעי – מלנכולי; ה-♭6 מושך למטה אל הקווינטה.'},
+locrian:{he:'לוקריאני',en:'Locrian',f:'1 b2 b3 4 b5 b6 b7',h:1,c:'לא יציב, הבית הטבעי של m7♭5. ה-♭2 הוא צליל הימנעות.'},
+locrian2:{he:'לוקריאני ♮2',en:'Locrian ♮2',f:'1 2 b3 4 b5 b6 b7',h:1,c:'המודוס השישי של מינור מלודי – m7♭5 רך ומודרני; ה-9 הטבעית פותחת את הצליל.'},
+locnat6:{he:'לוקריאני ♮6',en:'Locrian ♮6',f:'1 b2 b3 4 b5 6 b7',h:1,c:'המודוס השני של המינור ההרמוני – ii° של מינור עם 13 טבעית.'},
+melminor:{he:'מינור מלודי',en:'Melodic minor',f:'1 2 b3 4 5 6 7',h:1,c:'מינור עם 6 ו-7 גדולות – ג׳אזי ומתוחכם, בלי צלילי הימנעות על m6 ו-m(maj7).'},
+harmminor:{he:'מינור הרמוני',en:'Harmonic minor',f:'1 2 b3 4 5 b6 7',h:1,c:'מינור עם טון מוביל – דרמטי; הסקונדה המוגדלת ♭6–7 נשמעת אקזוטית.'},
+harmmaj:{he:'מז׳ור הרמוני',en:'Harmonic major',f:'1 2 3 4 5 b6 7',h:1,c:'מז׳ור עם ♭6 – רומנטי וקודר, יפה לסיומי משפט.'},
+ionaug:{he:'יוני ♯5',en:'Ionian ♯5',f:'1 2 3 4 #5 6 7',h:1,c:'המודוס השלישי של המינור ההרמוני – מז׳ור מוגדל.'},
+lydaug:{he:'לידי מוגדל',en:'Lydian augmented',f:'1 2 3 #4 #5 6 7',h:1,c:'המודוס השלישי של מינור מלודי – maj7♯5 מרחף.'},
+lydiandom:{he:'לידי דומיננטי',en:'Lydian dominant',f:'1 2 3 #4 5 6 b7',h:1,c:'דומיננט בהיר עם ♯11 – צבע "אקוסטי". טבעי לדומיננט שלא נפתר ולתחליף טריטון.'},
+mixob6:{he:'מיקסולידי ♭6',en:'Mixolydian ♭6',f:'1 2 3 4 5 b6 b7',h:1,c:'המודוס החמישי של מינור מלודי – מז׳ור שמסתיים בעצב.'},
+phrygdom:{he:'פריגי-דומיננטי · חיג׳אז · פריגיש',en:'Phrygian dominant',f:'1 b2 3 4 5 b6 b7',h:1,c:'המודוס החמישי של המינור ההרמוני (מיקסולידי ♭9 ♭13). ה-♭9 וה-♭13 מושכים חזק אל המינור. בעולם הערבי זה ג׳ינס חיג׳אז; בקלזמר – פריגיש (אהבה רבה).'},
+lydian2:{he:'לידי ♯2',en:'Lydian ♯2',f:'1 #2 3 #4 5 6 7',h:1,c:'המודוס השישי של המינור ההרמוני – מז׳ור אקזוטי ומרחף.'},
+ultraloc:{he:'אולטרה-לוקריאני',en:'Ultralocrian',f:'1 b2 b3 b4 b5 b6 bb7',h:1,c:'המודוס השביעי של המינור ההרמוני – °7 כאקורד מוביל אל מינור חצי טון מעליו.'},
+altered:{he:'אלטרד (סופר-לוקריאני)',en:'Altered',f:'1 b2 #2 3 #4 b6 b7',h:0,c:'המודוס השביעי של מינור מלודי: ♭9 ♯9 ♯11 ♭13 – מתח מרבי רגע לפני הפתרון.'},
+dimHW:{he:'דימיניש חצי-שלם',en:'Half-whole diminished',f:'1 b2 #2 3 #4 5 6 b7',h:0,c:'סימטרי; ♭9, ♯9, ♯11 ו-13 יחד – צליל חד ו"מודרני" לדומיננט.'},
+dimWH:{he:'דימיניש שלם-חצי',en:'Whole-half diminished',f:'1 2 b3 4 b5 b6 6 7',h:0,c:'סימטרי; כל צליל שאינו באקורד נמצא טון שלם מעל צליל אקורד – אין צלילי הימנעות.'},
+wholetone:{he:'טון-שלם',en:'Whole tone',f:'1 2 3 #4 #5 b7',h:0,c:'חלומי וחסר מרכז – דביסי, ומתאים ל-7♯5.'},
+dorian4:{he:'דורי ♯4 · מי שבירך',en:'Dorian ♯4',f:'1 2 b3 #4 5 6 b7',h:1,c:'מינור קלזמרי עם ♯4 כואב – "מי שבירך", הדורי האוקראיני.'},
+dorianb2:{he:'דורי ♭2',en:'Dorian ♭2',f:'1 b2 b3 4 5 6 b7',h:1,c:'המודוס השני של מינור מלודי – פריגי עם 13 טבעית, מסתורי אבל לא חשוך.'},
+hungminor:{he:'מינור הונגרי',en:'Hungarian minor',f:'1 2 b3 #4 5 b6 7',h:1,c:'שתי סקונדות מוגדלות – צועני ודרמטי.'},
+dblharm:{he:'הרמוני כפול · חיג׳אז כאר',en:'Double harmonic',f:'1 b2 3 4 5 b6 7',h:1,c:'שתי סקונדות מוגדלות סימטריות – צבע מזרחי-ביזנטי. יפה על האקורד המז׳ורי של חיג׳אז.'},
+bayati:{he:'ביאת (קירוב)',en:'Maqam Bayati (approx.)',f:'1 b2 b3 4 5 b6 b7',h:1,c:'מקאם ביאת. הדרגה השנייה במקור נמוכה ברבע טון מהסקונדה – בין ♭2 ל-2. כאן היא מקורבת כ-♭2; בקול או בגיטרה משכו אותה מעט למעלה.'},
+hirajoshi:{he:'היראג׳ושי',en:'Hirajoshi',f:'1 2 b3 5 b6',h:0,c:'פנטטוני יפני – שקט ומלנכולי, עם חצי הטון 5–♭6.'},
+insen:{he:'In (מיאקו-בושי)',en:'In scale',f:'1 b2 4 5 b6',h:0,c:'פנטטוני יפני בלי טרצה – שני חצאי טונים, צבע פריגי קשוח.'},
+majpent:{he:'פנטטונית מז׳ורית',en:'Major pentatonic',f:'1 2 3 5 6',h:0,c:'חמישה צלילים בלי חצאי טונים – פתוח ושמח.'},
+minpent:{he:'פנטטונית מינורית',en:'Minor pentatonic',f:'1 b3 4 5 b7',h:0,c:'השפה של הבלוז והרוק – חמישה צלילים חזקים.'},
+blues:{he:'בלוז (הקסטוני)',en:'Blues scale',f:'1 b3 4 b5 5 b7',h:0,c:'פנטטונית מינורית עם ♭5 – ה"בלו נוט".'},
+majblues:{he:'בלוז מז׳ורי',en:'Major blues',f:'1 2 b3 3 5 6',h:0,c:'פנטטונית מז׳ורית עם ♭3 כצליל מעבר – קאנטרי וגוספל.'},
+bebopdom:{he:'ביבופ דומיננטי',en:'Bebop dominant',f:'1 2 3 4 5 6 b7 7',h:0,c:'מיקסולידי עם 7 כצליל מעבר – בשמיניות, צלילי האקורד נופלים על הפעמות.'},
+bebopmaj:{he:'ביבופ מז׳ורי',en:'Bebop major',f:'1 2 3 4 5 #5 6 7',h:0,c:'יוני עם ♯5 כצליל מעבר – זרימת שמיניות חלקה.'},
+bebopdor:{he:'ביבופ דורי',en:'Bebop dorian',f:'1 2 b3 3 4 5 6 b7',h:0,c:'דורי עם 3 כצליל מעבר.'},
+bebopmin:{he:'ביבופ מינורי (מלודי)',en:'Bebop melodic minor',f:'1 2 b3 4 5 #5 6 7',h:0,c:'מינור מלודי עם ♯5 כצליל מעבר.'},
+tmaj:{he:'טריאדה מז׳ורית',en:'Major triad',f:'1 3 5',h:0,tri:1,c:'טריאדת מבנה עליון (UST): טריאדה פשוטה שמשמיעה טנשנים מעל האקורד.'},
+taug:{he:'טריאדה מוגדלת',en:'Augmented triad',f:'1 3 #5',h:0,tri:1,c:'טריאדת מבנה עליון מוגדלת.'},
+};
+const SH=id=>SC[id].sh||SC[id].he;SC.phrygdom.sh='פריגי-דומיננטי';SC.aeolian.sh='אאולי';SC.ionian.sh='יוני';SC.dorian4.sh='דורי ♯4';SC.dblharm.sh='הרמוני כפול';
+for(const k in SC){const s=SC[k];s.d=s.f.split(' ');s.s=s.d.map(x=>mod(dg(x).s));}
+
+const Q={
+ maj:{t:['1','3','5'],fam:'maj',sym:'',rn:'',tri:1,v:['1','3','5'],he:'מז׳ור'},
+ m:{t:['1','b3','5'],fam:'min',sym:'m',rn:'',tri:1,v:['1','b3','5'],he:'מינור'},
+ '7':{t:['1','3','5','b7'],fam:'dom',o5:1,sym:'7',rn:'7',v:['3','5','b7','9'],he:'7'},
+ maj7:{t:['1','3','5','7'],fam:'maj',sym:'maj7',rn:'maj7',v:['3','5','7','9'],he:'maj7'},
+ m7:{t:['1','b3','5','b7'],fam:'min',sym:'m7',rn:'7',v:['b3','5','b7','9'],he:'m7'},
+ '6':{t:['1','3','5','6'],fam:'maj',sym:'6',rn:'6',v:['3','5','6','9'],he:'6'},
+ m6:{t:['1','b3','5','6'],fam:'min',sym:'m6',rn:'6',v:['b3','5','6','9'],he:'m6'},
+ m7b5:{t:['1','b3','b5','b7'],fam:'hd',sym:'m7♭5',rn:'ø7',v:['1','b3','b5','b7'],he:'m7♭5'},
+ dim7:{t:['1','b3','b5','bb7'],fam:'dim',sym:'°7',rn:'°7',v:['1','b3','b5','bb7'],he:'°7'},
+ mMaj7:{t:['1','b3','5','7'],fam:'min',sym:'m(maj7)',rn:'(maj7)',v:['b3','5','7','9'],he:'m(maj7)'},
+ '7alt':{t:['1','3','b7'],fam:'dom',sym:'7alt',rn:'7alt',v:['3','b7','#9','b13'],he:'7alt'},
+ '7b9':{t:['1','3','5','b7','b9'],fam:'dom',o5:1,sym:'7♭9',rn:'7♭9',v:['3','5','b7','b9'],he:'7♭9'},
+ '7#11':{t:['1','3','5','b7','#11'],fam:'dom',o5:1,sym:'7♯11',rn:'7♯11',v:['3','#11','b7','9'],he:'7♯11'},
+ '7#5':{t:['1','3','#5','b7'],fam:'dom',sym:'7♯5',rn:'7♯5',v:['3','#5','b7','9'],he:'7♯5'},
+ sus4:{t:['1','4','5'],fam:'sus',sym:'sus4',rn:'sus4',tri:1,v:['1','4','5'],he:'sus4'},
+ '7sus4':{t:['1','4','5','b7'],fam:'sus',sym:'7sus4',rn:'7sus4',v:['4','5','b7','9'],he:'7sus4'},
+};
+const QORDER=['maj','m','7','maj7','m7','6','m6','m7b5','dim7','mMaj7','7alt','7b9','7#11','7#5','sus4','7sus4'];
+for(const k in Q){const q=Q[k];q.rel=q.t.map(x=>mod(dg(x).s));q.core=q.t.filter(x=>!(q.o5&&x==='5')).map(x=>mod(dg(x).s));q.nums=q.t.map(x=>dg(x).n);}
+
+const HOMES=['ionian','dorian','phrygian','lydian','mixolydian','aeolian','harmminor','phrygdom'];
+const BORROW=['aeolian','ionian','dorian','mixolydian','harmminor','melminor'];
+const ROT=['ionian','dorian','phrygian','lydian','mixolydian','aeolian','locrian','harmminor','locnat6','ionaug','dorian4','phrygdom','lydian2','ultraloc','melminor','dorianb2','lydaug','lydiandom','mixob6','locrian2','altered'];
+const PATT={};ROT.forEach(id=>{const k=[...SC[id].s].sort((a,b)=>a-b).join(',');if(!(k in PATT))PATT[k]=id;});
+const rotId=(abs,rp)=>PATT[[...abs].map(p=>mod(p-rp)).sort((a,b)=>a-b).join(',')]||null;
+const absSet=(id,rootPc)=>new Set(SC[id].s.map(s=>mod(s+rootPc)));
+const DEGS=['1','b2','2','b3','3','4','#4','5','b6','6','b7','7'];
+const RN=['I','II','III','IV','V','VI','VII'];
+function roman(d,q){const m=/^(b|#)?(\d)$/.exec(d);const a=m[1]==='b'?'♭':m[1]==='#'?'♯':'';let r=RN[+m[2]-1];const f=Q[q].fam;if(f==='min'||f==='hd'||f==='dim')r=r.toLowerCase();return a+r+Q[q].rn;}
+
+function keyTonic(p,home){const c=[];for(let l=0;l<7;l++){let a=mod(p-LPC[l]);if(a>6)a-=12;if(Math.abs(a)<=1)c.push({l,a});}
+  const nat=c.find(x=>x.a===0);if(nat)return nat;let best=null,bs=1e9;
+  for(const x of c){const sc=SC[home].d.reduce((t,d)=>t+Math.abs(spell(x,d).a),0);if(sc<bs||(sc===bs&&(p===6?x.a>0:x.a<0))){best=x;bs=sc;}}return best;}
+
+function roleOf(rel,c){if(c.Qd.rel.includes(rel))return'ct';if(c.fam==='sus'&&rel===4)return'av';
+  for(const t of c.Qd.rel){if(mod(rel-t)===1){if(c.fam==='dom'&&(t===0||t===7))continue;return'av';}}return'tn';}
+function ivl(c,n,role){const d=mod(n.l-c.root.l,7),s=mod(pc(n)-c.rp);let a=s-LPC[d];if(a>6)a-=12;if(a<-6)a+=12;let num=d+1;
+  if(role!=='ct'&&(num===2||num===4||num===6)&&!c.Qd.nums.includes(num))num+=7;
+  if(role==='ct'&&num===2&&c.Qd.nums.includes(9))num=9;
+  return(a<0?'♭'.repeat(-a):'♯'.repeat(a))+num;}
+
+const TNS={0:'1',1:'♭9',2:'9',4:'3',5:'11',7:'5',9:'13',10:'♭7',11:'7'};
+function ivlPc(c,rel,role){if(role==='ct'){const i=c.Qd.rel.indexOf(rel);return acc2(c.Qd.t[i]);}
+  const has5=c.Qd.rel.includes(7)||c.fam==='dom';
+  if(rel===3)return c.Qd.rel.includes(4)||c.fam==='dom'?'♯9':'♭3';if(rel===6)return has5?'♯11':'♭5';if(rel===8)return has5?'♭13':'♯5';
+  if(rel===9&&c.Qd.nums.includes(6))return'6';return TNS[rel];}
+const AWK=n=>(n.l===0&&n.a===-1)||(n.l===6&&n.a===1)||(n.l===2&&n.a===1)||(n.l===3&&n.a===-1);
+function spellScale(root,id){const sd=SC[id];let notes=sd.d.map(x=>spell(root,x));if(!sd.h)notes=notes.map(n=>simp(n,root.a<0));return notes.map(n=>Math.abs(n.a)>2?byPc(pc(n),n.a<0):n);}
+const dbl=ns=>ns.reduce((t,n)=>t+(Math.abs(n.a)>=2?1:0),0);
+function buildRec(c,r,tier){const sd=SC[r.id];let root=spell(c.root,r.deg);root=simp(root,c.root.a<0||root.a<0);
+  if(r.deg!=='1'&&AWK(root))root=byPc(pc(root),root.a<0);
+  let notes=spellScale(root,r.id);
+  if(r.deg!=='1'&&sd.h&&dbl(notes)){const alt=byPc(pc(root),!(root.a<0));if(alt.l!==root.l){const n2=spellScale(alt,r.id);if(dbl(n2)<dbl(notes)){root=alt;notes=n2;}}}
+  const list=notes.map(n=>{const rel=mod(pc(n)-c.rp);const role=roleOf(rel,c);return{n,rel,role,iv:sd.h&&r.deg==='1'?ivl(c,n,role):ivlPc(c,rel,role)};});
+  const rel=list.map(x=>x.rel);let inside=c.Qd.core.every(x=>rel.includes(x));
+  if(r.sub){const ss=new Set(r.sub);inside=rel.every(v=>ss.has(v))&&list.every(x=>x.role!=='av');}
+  let name=sd.tri?`טריאדת ${nm(root)}${r.id==='taug'?'+':''} מעל ${nm(c.root)}`:`${nm(root)} ${sd.he}`;
+  let why=r.why;if(why==='UST')why='מבנה עליון: '+list.map(x=>x.iv).join(' · ');
+  return{id:r.id,deg:r.deg,tier,root,notes:list,rel,inside,sub:!!r.sub,name,why,en:sd.en};}
+
+function recs(c,home){
+  const x=c.ctx,q=c.Qd,fam=c.fam,tri=!!q.tri,S=[],C=[],O=[];
+  const P=(id,deg,why)=>({id,deg:deg||'1',why:why||''});
+  const pick=al=>{for(const k of x.cands)if(al.includes(k.id))return k;return null;};
+  const nxs=c.next.sym;let safe,src=null,lab='';
+  const PB5='= פנטטונית מינורית מה-♯9: כל הצלילים הם טנשנים אלטרד';
+  if(x.domPath){
+    const k=x.func;
+    if(c.q==='7b9'){safe='phrygdom';C.push(P('dimHW'),P('altered'));O.push(P('tmaj','6','UST'),P('tmaj','b3','UST'));}
+    else if(c.q==='7alt'){safe='altered';C.push(P('phrygdom'),P('dimHW','1','מתאים כשהקומפינג מדגיש ♭9 / ♯9 / ♯11'));O.push(P('majpent','b5',PB5),P('tmaj','b6','UST'),P('tmaj','b5','UST'));}
+    else if(c.q==='7#11'){safe='lydiandom';C.push(P('dimHW'),P('wholetone'));O.push(P('tmaj','2','UST'));}
+    else if(c.q==='7#5'){safe='wholetone';C.push(P('altered'));O.push(P('taug','2','UST'));}
+    else if(k==='toMinor'){safe='phrygdom';if(!tri)C.push(P('altered'));C.push(P('dimHW'));O.push(P('majpent','b5',PB5),P('tmaj','b6','UST'),P('bebopdom'));}
+    else if(k==='tritone'){safe='lydiandom';if(!tri)C.push(P('wholetone'));C.push(P('dimHW'));O.push(P('tmaj','2','UST'),P('bebopdom'));}
+    else if(k==='toMajor'){safe='mixolydian';if(!tri)C.push(P('altered'));C.push(P('dimHW'),P('lydiandom'));O.push(P('majpent','b5',PB5),P('tmaj','b6','UST'),P('tmaj','b5','UST'),P('bebopdom'));}
+    else{safe=(x.diat==='lydiandom'||x.diat==='mixob6')?x.diat:'mixolydian';if(safe!=='lydiandom')C.push(P('lydiandom','1','דומיננט שלא נפתר – ה-♯11 מחליף את ה-4 הבעייתי'));C.push(P('dimHW'));
+      O.push(P('minpent','1','הבלוז: ♭3 מול 3 של האקורד'),P('blues','1','♭3 ו-♭5 מעל דומיננט – מחוץ לקופסה במכוון'),P('minpent','5','צליל sus: 5 · ♭7 · 1 · 9 · 11'),P('tmaj','2','UST'),P('bebopdom'));}
+    lab={toMinor:`דומיננט שנפתר למינור (${nxs})`,toMajor:`דומיננט שנפתר אל ${nxs}`,tritone:`תחליף טריטון – נפתר חצי טון למטה אל ${nxs}`,static:'דומיננט שלא נפתר – צבע, לא פונקציה'}[k];
+  }else if(fam==='maj'){
+    const six=c.q==='6';
+    const al=tri?['ionian','lydian','mixolydian','lydian2','phrygdom']:six?['ionian','lydian','mixolydian']:['ionian','lydian','lydian2'];
+    if(x.tonicized){safe='ionian';lab='יעד של דומיננט – מרכז טונאלי זמני';}else{const k=pick(al);if(k){safe=k.id;src=k;}else safe='ionian';}
+    const CM={ionian:six?['lydian']:['lydian','harmmaj'],lydian:six?['lydian2']:['lydian2','harmmaj'],mixolydian:six?['lydiandom']:['lydiandom','mixob6'],lydian2:['lydian'],phrygdom:['dblharm']};
+    CM[safe].forEach(id=>C.push(P(id)));
+    if(safe==='mixolydian')O.push(P('minpent','5','5 · ♭7 · 1 · 9 · 11 – צליל מודאלי פתוח'),P('minpent','1','♭3 מול 3 – נגיעת בלוז'),P('tmaj','b7','UST'),P('bebopdom'));
+    else if(safe==='phrygdom')O.push(P('insen','1','צבע יפני שחולק את ה-♭2 וה-♭6'),P('tmaj','b2','UST'));
+    else if(safe==='lydian2')O.push(P('tmaj','2','UST'));
+    else O.push(P('majpent','5','בלי השורש – צליל פתוח ומודרני'),P('majpent','2','מוסיף ♯11 – צבע לידי'),P('tmaj','2','UST'),P('tmaj','5','UST'),P('bebopmaj'));
+  }else if(fam==='min'){
+    if(c.q==='mMaj7'){const k=pick(['melminor','harmminor','hungminor']);safe=k?k.id:'melminor';src=k;
+      ({melminor:['harmminor','hungminor'],harmminor:['melminor','hungminor'],hungminor:['harmminor','melminor']})[safe].forEach(id=>C.push(P(id)));
+      O.push(P('taug','b3','UST'),P('bebopmin'));}
+    else if(c.q==='m6'){const k=pick(['dorian','melminor']);safe=k?k.id:'dorian';src=k;C.push(P(safe==='dorian'?'melminor':'dorian'));
+      O.push(P('minpent','2','9 · 11 · 5 · 13 · 1'),P('tmaj','4','UST'),P('bebopmin'));}
+    else{
+      const m7=c.q==='m7';
+      const al=m7?['dorian','aeolian','phrygian','dorian4','dorianb2']:['dorian','aeolian','phrygian','harmminor','melminor','dorian4','dorianb2'];
+      const d=x.cands.find(k=>k.src==='diat'&&al.includes(k.id));
+      if(d){safe=d.id;src=d;}else if(x.iiRole){safe='dorian';lab=`תפקיד ii – מכין את ${nxs}`;}else{const k=pick(al);if(k){safe=k.id;src=k;}else safe='dorian';}
+      const CM={dorian:m7?['aeolian','dorian4']:['melminor','dorian4','aeolian'],aeolian:m7?['dorian','dorian4']:['harmminor','dorian','hirajoshi'],phrygian:m7?['bayati','dorianb2','aeolian']:['bayati','aeolian'],harmminor:['hungminor','aeolian','melminor'],melminor:['dorian','harmminor'],dorian4:m7?['dorian','aeolian']:['dorian','hungminor'],dorianb2:['phrygian','dorian']};
+      CM[safe].forEach(id=>C.push(P(id)));
+      if(safe==='phrygian'||safe==='dorianb2')O.push(P('insen','1','צבע יפני – ♭2 ו-♭6 בלי טרצה'),P('tmaj','b2','UST'));
+      else{O.push(P('minpent','5','5 · ♭7 · 1 · 9 · 11'),P('minpent','2','מוסיף 13 – צבע דורי'),P('majpent','b7','♭7 · 1 · 9 · 11 · 5'),P('tmaj','b7','UST'));
+        if(m7&&safe==='aeolian')O.push(P('hirajoshi','1','יפני – עם ♭6 ובלי ♭7'));O.push(P('bebopdor'));}
+    }
+  }else if(fam==='hd'){const k=pick(['locrian','locrian2','locnat6']);safe=k?k.id:'locrian';src=k;
+    ({locrian:['locrian2'],locrian2:['locrian'],locnat6:['locrian2','locrian']})[safe].forEach(id=>C.push(P(id)));
+    O.push(P('minpent','b3','♭3 · ♭5 · ♭13 · ♭7 · ♭9'),P('tmaj','b5','UST'));}
+  else if(fam==='dim'){safe='dimWH';C.push(P('ultraloc'));O.push(P('tmaj','7','= 7♭9 בלי שורש, חצי טון מתחת'),P('tmaj','2','UST'));}
+  else{const k=pick(['mixolydian','dorian','ionian','aeolian','phrygian']);safe=k?k.id:'mixolydian';src=k;
+    C.push(P('majpent','b7','"F/G" – הצליל הקלאסי של sus'),P(safe==='dorian'?'mixolydian':'dorian'));
+    O.push(P('phrygian','1','sus♭9 – צבע כהה'),P('tmaj','b7','UST'),P('minpent','5'));}
+  if(!lab){if(src&&src.src==='diat')lab=safe===home?`המודוס של הבית – ${SH(safe)}`:`דיאטוני ל${SH(home)} – ${SH(safe)}`;else if(src&&src.src==='borrow')lab=`שאול מה${SH(src.from)} המקביל`;else lab='סולם האקורד (ללא הקשר דיאטוני)';}
+  S.push(P(safe,'1',''));
+  const pent=fam==='min'?'minpent':(fam==='maj'||fam==='dom')?'majpent':null;
+  if(pent){const b=buildRec(c,P(pent),'safe');const ss=new Set(SC[safe].s);if(b.rel.every(v=>ss.has(v))&&b.notes.every(n=>n.role!=='av'))S.push({...P(pent,'1','תת-קבוצה של '+SC[safe].he+': חמישה צלילים בלי צלילי הימנעות – נקודת פתיחה בטוחה'),sub:SC[safe].s});}
+  if(fam!=='dim')O.push(P(safe,'b2','Side-slip: אותו סולם חצי טון מעל – יציאה מכוונת וחזרה'));
+  return{label:lab,S:S.map(r=>buildRec(c,r,'safe')),C:C.map(r=>buildRec(c,r,'color')),O:O.map(r=>buildRec(c,r,'out'))};
+}
+
+function parseBars(s){return s.split('|').map(b=>b.trim().split(/\s+/).map(t=>{const[d,q]=t.split(':');return{d,q};}));}
+
+function resolveProg(p){
+  const T=keyTonic(p.tonic,p.home),hp=absSet(p.home,p.tonic),flat=[];
+  p.bars.forEach((b,bi)=>b.forEach((c,ci)=>{const root=simp(spell(T,c.d));const q=Q[c.q];
+    flat.push({d:c.d,q:c.q,bar:bi,ci,nIn:b.length,root,rp:pc(root),Qd:q,fam:q.fam,tones:q.t.map(t=>spell(root,t)),sym:nm(root)+q.sym,rn:roman(c.d,c.q)});}));
+  const N=flat.length;flat.forEach((c,i)=>{c.idx=i;c.next=flat[(i+1)%N];c.prev=flat[(i-1+N)%N];});
+  flat.forEach(c=>{const abs=c.Qd.rel.map(s=>mod(s+c.rp));const fits=S=>abs.every(v=>S.has(v));const cands=[];
+    if(fits(hp)){const id=rotId(hp,c.rp);if(id)cands.push({id,src:'diat'});}
+    for(const b of BORROW){if(b===p.home)continue;const s=absSet(b,p.tonic);if(fits(s)){const id=rotId(s,c.rp);if(id&&!cands.some(k=>k.id===id))cands.push({id,src:'borrow',from:b});}}
+    const nx=c.next,dist=mod(nx.rp-c.rp);let func='static';
+    if(dist===11)func='tritone';else if(dist===5&&(nx.fam!=='dom'||p.chains||(c.d==='5'&&nx.d==='1')))func=(nx.fam==='min'||nx.fam==='hd'||nx.fam==='dim')?'toMinor':'toMajor';
+    const diat=cands.find(k=>k.src==='diat');
+    const domPath=c.fam==='dom'||(c.q==='maj'&&!diat&&func!=='static');
+    c.ctx={cands,func,domPath,diat:diat?diat.id:null,iiRole:c.q==='m7'&&nx.fam==='dom'&&dist===5};});
+  flat.forEach(c=>{const pv=c.prev;c.ctx.tonicized=pv!==c&&pv.ctx.domPath&&pv.ctx.func!=='static';});
+  flat.forEach(c=>{c.recs=recs(c,p.home);});
+  const bars=p.bars.map((b,bi)=>flat.filter(c=>c.bar===bi));
+  return{T,home:p.home,tonic:p.tonic,chords:flat,bars,loop:loopScales(flat,T,p)};
+}
+
+function loopScales(flat,T,p){
+  const tp=pc(T),items=[];const ids=[...new Set([p.home,'ionian','dorian','mixolydian','aeolian','lydian','phrygian','harmminor','melminor','phrygdom','dorian4','hungminor','dblharm','harmmaj','lydiandom','mixob6'])];const PART=new Set([p.home,'ionian','dorian','mixolydian','aeolian','harmminor','phrygdom']);
+  let best=null;
+  for(const id of ids){const s=absSet(id,tp);const miss=flat.filter(c=>!c.Qd.rel.every(v=>s.has(mod(v+c.rp))));const u=new Set(miss.map(c=>c.sym)).size;
+    if(!miss.length){if(items.length<3)items.push({id,kind:'full',note:items.length?'גם הוא מכיל את כל צלילי האקורדים – צבע אחר לאותו לופ.':'מכיל את צלילי כל האקורדים בלופ.'});}
+    else if(PART.has(id)&&(!best||u<best.u))best={id,miss,u};}
+  for(const id of['majpent','minpent']){const s=[...absSet(id,tp)];
+    const ok=flat.every(c=>{const safe=new Set(c.recs.S[0].rel);return s.every(v=>{const r=mod(v-c.rp);return safe.has(r)&&roleOf(r,c)!=='av';});});
+    if(ok)items.push({id,kind:'pent',note:'חמישה צלילים שמתאימים לסולם הבטוח של כל אקורד, בלי צלילי הימנעות.'});}
+  if(!items.some(i=>i.kind==='full')&&best&&!p.blues){const seen=new Set(),ms=[];
+    for(const c of best.miss){if(seen.has(c.sym))continue;seen.add(c.sym);const s=absSet(best.id,tp);ms.push(c.sym+' ('+c.tones.filter(n=>!s.has(pc(n))).map(nm).join(', ')+')');}
+    const total=new Set(flat.map(c=>c.sym)).size,hits=total-best.u;
+    items.push({id:best.id,kind:'partial',note:`אין סולם אחד שמכיל את כל האקורדים. הקרוב ביותר מתאים ל-${hits} מתוך ${total} האקורדים השונים; שנו צליל ב: ${ms.join(' · ')}.`});}
+  if(p.blues){items.push({id:'blues',kind:'blues',note:'הגישה הקלאסית על כל הבלוז: ♭3 ו-♭5 מול הטרצה המז׳ורית – מחוץ לקופסה במכוון.'});
+    if(!items.some(i=>i.id==='minpent'))items.push({id:'minpent',kind:'blues',note:'פנטטונית מינורית מהטוניקה על כל הלופ – העימות ♭3/3 הוא הצבע.'});
+    items.push({id:'majblues',kind:'blues',note:'בלוז מז׳ורי – צד "שמח" יותר; שלבו עם הבלוז המינורי.'});}
+  return items.map(i=>({...i,root:T,notes:spellScale(T,i.id),name:`${nm(T)} ${SC[i.id].he}`}));
+}
+
+const LIB=[
+ {id:'dor1',cat:'modal',name:'דורי i–IV',lvl:1,home:'dorian',tonic:2,meter:'4/4',bpm:96,drums:'straight8',bass:'motion',comp:'piano',bars:'1:m7|4:maj'},
+ {id:'mix1',cat:'modal',name:'מיקסולידי I–♭VII',lvl:1,home:'mixolydian',tonic:7,meter:'4/4',bpm:112,drums:'straight8',bass:'roots',comp:'guitar',bars:'1:maj|b7:maj'},
+ {id:'phr1',cat:'modal',name:'פריגי i–♭II',lvl:2,home:'phrygian',tonic:4,meter:'6/8',bpm:66,drums:'six8',bass:'motion',comp:'guitar',bars:'1:m|b2:maj'},
+ {id:'lyd1',cat:'modal',name:'לידי I–II',lvl:2,home:'lydian',tonic:5,meter:'4/4',bpm:84,drums:'ballad',bass:'roots',comp:'pad',bars:'1:maj7|1:maj7|2:maj|2:maj'},
+ {id:'aeo1',cat:'modal',name:'אאולי i–♭VI–♭VII',lvl:1,home:'aeolian',tonic:9,meter:'4/4',bpm:90,drums:'straight8',bass:'motion',comp:'piano',bars:'1:m|b6:maj|b7:maj|1:m'},
+ {id:'pop1',cat:'pop',name:'I–V–vi–IV',lvl:1,home:'ionian',tonic:0,meter:'4/4',bpm:100,drums:'straight8',bass:'roots',comp:'piano',bars:'1:maj|5:maj|6:m|4:maj'},
+ {id:'pop2',cat:'pop',name:'vi–IV–I–V',lvl:1,home:'ionian',tonic:7,meter:'4/4',bpm:92,drums:'straight8',bass:'motion',comp:'guitar',bars:'6:m|4:maj|1:maj|5:maj'},
+ {id:'pop3',cat:'pop',name:'I–♭VII–IV',lvl:1,home:'mixolydian',tonic:2,meter:'4/4',bpm:118,drums:'straight8',bass:'roots',comp:'guitar',bars:'1:maj|b7:maj|4:maj|1:maj'},
+ {id:'blu1',cat:'blues',name:'בלוז 12 תיבות',lvl:1,home:'mixolydian',tonic:9,meter:'4/4',bpm:96,drums:'swing',bass:'motion',comp:'piano',blues:true,bars:'1:7|4:7|1:7|1:7|4:7|4:7|1:7|1:7|5:7|4:7|1:7|5:7'},
+ {id:'blu2',cat:'blues',name:'בלוז מינורי',lvl:2,home:'dorian',tonic:0,meter:'4/4',bpm:110,drums:'swing',bass:'walking',comp:'piano',blues:true,bars:'1:m7|1:m7|1:m7|1:m7|4:m7|4:m7|1:m7|1:m7|b6:7|5:7|1:m7|5:7'},
+ {id:'blu3',cat:'blues',name:'בלוז ג׳אזי',lvl:3,home:'ionian',tonic:5,meter:'4/4',bpm:132,drums:'swing',bass:'walking',comp:'piano',chains:true,blues:true,bars:'1:7|4:7|1:7|5:m7 1:7|4:7|#4:dim7|1:7|3:m7 6:7|2:m7|5:7|1:7 6:7|2:m7 5:7'},
+ {id:'jz1',cat:'jazz',name:'ii–V–I מז׳ורי',lvl:1,home:'ionian',tonic:0,meter:'4/4',bpm:120,drums:'swing',bass:'walking',comp:'piano',chains:true,bars:'2:m7|5:7|1:maj7|1:maj7'},
+ {id:'jz2',cat:'jazz',name:'ii°–V7–i מינורי',lvl:2,home:'aeolian',tonic:0,meter:'4/4',bpm:116,drums:'swing',bass:'walking',comp:'piano',chains:true,bars:'2:m7b5|5:7b9|1:m6|1:m6'},
+ {id:'jz3',cat:'jazz',name:'I–vi–ii–V',lvl:1,home:'ionian',tonic:5,meter:'4/4',bpm:140,drums:'swing',bass:'walking',comp:'piano',chains:true,bars:'1:maj7|6:m7|2:m7|5:7'},
+ {id:'jz4',cat:'jazz',name:'Rhythm Changes · חלק A',lvl:3,home:'ionian',tonic:10,meter:'4/4',bpm:168,drums:'swing',bass:'walking',comp:'piano',chains:true,bars:'1:6 6:m7|2:m7 5:7|1:6 6:m7|2:m7 5:7|5:m7 1:7|4:6 #4:dim7|1:6 5:7|1:6 5:7'},
+ {id:'jz5',cat:'jazz',name:'בסגנון Autumn Leaves',lvl:2,home:'aeolian',tonic:7,meter:'4/4',bpm:120,drums:'swing',bass:'walking',comp:'piano',chains:true,bars:'4:m7|b7:7|b3:maj7|b6:maj7|2:m7b5|5:7|1:m6|1:m6'},
+ {id:'jz6',cat:'jazz',name:'בסגנון Blue Bossa',lvl:2,home:'aeolian',tonic:0,meter:'4/4',bpm:140,drums:'bossa',bass:'motion',comp:'guitar',chains:true,bars:'1:m7|1:m7|4:m7|4:m7|2:m7b5|5:7|1:m7|1:m7|b3:m7|b6:7|b2:maj7|b2:maj7|2:m7b5|5:7|1:m7|2:m7b5 5:7'},
+ {id:'jz7',cat:'jazz',name:'מהלך קולטריין',lvl:3,home:'ionian',tonic:0,meter:'4/4',bpm:150,drums:'swing',bass:'walking',comp:'piano',chains:true,bars:'2:m7 b3:7|b6:maj7 7:7|3:maj7 5:7|1:maj7'},
+ {id:'mz1',cat:'mzr',name:'חיג׳אז I–♭II',lvl:1,home:'phrygdom',tonic:2,meter:'4/4',bpm:100,drums:'maqsum',bass:'roots',comp:'guitar',bars:'1:maj|1:maj|b2:maj|1:maj'},
+ {id:'mz2',cat:'mzr',name:'קדנצה אנדלוסית',lvl:1,home:'aeolian',tonic:9,meter:'4/4',bpm:96,drums:'ballad',bass:'motion',comp:'guitar',bars:'1:m|b7:maj|b6:maj|5:maj'},
+ {id:'mz3',cat:'mzr',name:'פריילעך',lvl:2,home:'phrygdom',tonic:2,meter:'4/4',bpm:132,drums:'bulgar',bass:'roots',comp:'piano',bars:'1:maj|1:maj|b7:m|1:maj|1:maj|4:m|b7:m 1:maj|1:maj'},
+ {id:'fk1',cat:'funk',name:'וואמפ דומיננטי',lvl:1,home:'mixolydian',tonic:4,meter:'4/4',bpm:100,drums:'funk',bass:'motion',comp:'guitar',bars:'1:7|1:7'},
+ {id:'fk2',cat:'funk',name:'m7–IV7 דורי',lvl:1,home:'dorian',tonic:9,meter:'4/4',bpm:96,drums:'funk',bass:'motion',comp:'piano',bars:'1:m7 4:7|1:m7 4:7'},
+];
+
+function selfTest(){
+  let checked=0;const err=[];
+  const chk=(L,label)=>{if(Math.abs(L.T.a)>1)err.push(label+': כתיב טוניקה');
+    L.chords.forEach(c=>{
+      if(c.rp!==mod(L.tonic+dg(c.d).s))err.push(`${label}: שורש ${c.sym}`);
+      if(new Set(c.tones.map(n=>n.l)).size!==c.tones.length)err.push(`${label}: כתיב ${c.sym}`);
+      ['S','C'].forEach(t=>c.recs[t].forEach(r=>{checked++;if(!r.inside)err.push(`${label}: ${c.sym} → ${r.name} ${r.sub?'תת-קבוצה לא תקינה':'חסר צליל אקורד'}`);}));
+      ['S','C','O'].forEach(t=>c.recs[t].forEach(r=>{if(SC[r.id].h&&new Set(r.notes.map(x=>x.n.l)).size!==r.notes.length)err.push(`${label}: כתיב ${r.name}`);if(r.notes.some(x=>Math.abs(x.n.a)>2))err.push(`${label}: ${r.name} משולש`);}));
+      if(!c.recs.S.length)err.push(`${label}: אין המלצה בטוחה ל-${c.sym}`);
+    });};
+  for(const t of LIB)for(let k=0;k<12;k++)chk(resolveProg({tonic:k,home:t.home,bars:parseBars(t.bars),chains:!!t.chains,blues:!!t.blues}),`${t.name} ב-${k}`);
+  const ctxs={static:'1',toMajor:'4:maj7',toMinor:'4:m7',tritone:'7:maj7'};
+  for(const q of QORDER)for(const home of['ionian','aeolian'])for(const cx in ctxs)for(let k=0;k<12;k++){
+    const nx=cx==='static'?'1:'+q:ctxs[cx];chk(resolveProg({tonic:k,home,bars:parseBars('1:'+q+'|'+nx),chains:true}),`${q}/${cx}/${home} ב-${k}`);}
+  return{checked,err};
+}
+</script>
+
+<script>
+/* ================= APP ================= */
+const $=id=>document.getElementById(id);
+const METER={'4/4':{beats:4,dots:4,split:.5,def:'swing'},'3/4':{beats:3,dots:3,split:2/3,def:'waltzj'},'6/8':{beats:2,dots:6,split:.5,def:'six8'}};
+const STY={
+ straight8:{he:'סטרייט 8',m:'4/4',S:16,dr:{kick:'X.......X.x.....',snare:'....X.......X...',hat:'x.o.x.o.x.o.x.o.'},piano:'X...x...X...x...',guitar:'X.x.x.x.X.x.x.x.',bass:'X.......X.x.....'},
+ swing:{he:'סווינג',m:'4/4',S:12,dr:{ride:'X..x.xX..x.x',hatf:'...x.....x..',kick:'g..g..g..g..',snare:'..........g.'},piano:'s....X......',guitar:'s..s..s..s..',bass:'X.....x.....'},
+ bossa:{he:'בוסה נובה',m:'4/4',S:16,dr:{kick:'X..xX..xX..xX..x',rim:'x..x..x...x..x..',hat:'o.o.o.o.o.o.o.o.'},piano:'X..x..x...x..x..',guitar:'X..x..x...x..x..',bass:'X.....x.X.....x.'},
+ funk:{he:'פאנק',m:'4/4',S:16,dr:{kick:'X..x..x...X..x..',snare:'....X..g.g..X..g',hat:'xoxoxoxoxoxoxoxo'},piano:'s..s...s..s...s.',guitar:'..s...s...s..s.s',bass:'X..x..x...X..xx.'},
+ ballad:{he:'בלדה',m:'4/4',S:16,dr:{kick:'X.......o.......',rim:'............x...',ride:'o...o...o...o...',hatf:'....x.......x...'},piano:'X.......x.......',guitar:'X...x...x...x...',bass:'X.......x.......'},
+ maqsum:{he:'מקסום',m:'4/4',S:16,dr:{doum:'X.......X.......',tek:'..x.g.x...g.x.g.'},piano:'X.....s.X...s...',guitar:'X.s...s.X.s.s...',bass:'X.....x.X.......'},
+ bulgar:{he:'בולגר 3+3+2',m:'4/4',S:16,dr:{kick:'X.....x.....x...',snare:'....x.....x...x.',hat:'x.o.x.o.x.o.x.o.'},piano:'....s.....s...s.',guitar:'....s.....s...s.',bass:'X.....x.....x...'},
+ waltzj:{he:'ואלס ג׳אז',m:'3/4',S:9,dr:{ride:'X..x.xx..',hatf:'......x..',kick:'g........'},piano:'...s..s..',guitar:'s..s..s..',bass:'X.....x..'},
+ waltz:{he:'ואלס / בלדה ב-3',m:'3/4',S:12,dr:{kick:'X...........',snare:'....x...x...',hat:'x.o.x.o.x.o.'},piano:'X...s...s...',guitar:'X...x...x...',bass:'X.......x...'},
+ six8:{he:'6/8',m:'6/8',S:12,dr:{kick:'X.........x.',snare:'......X.....',hat:'x.o.o.x.o.o.'},piano:'X.....x.....',guitar:'x.x.x.x.x.x.',bass:'X.....x.....'},
+};
+const VEL={X:1,x:.75,o:.45,g:.22,s:.8,'.':0};
+const BASSM={roots:'שורשים',motion:'מהלך',walking:'Walking',pedal:'פדאל'};
+const COMPM={pad:'פד',piano:'פסנתר',guitar:'גיטרה'};
+const CATS=[['modal','מודאלי'],['pop','פופ / רוק'],['blues','בלוז'],['jazz','ג׳אז'],['mzr','מזרחי / ים-תיכוני'],['funk','פאנק / סול'],['mine','הלופים שלי']];
+const TIERS=['safe','color','out'];
+const TIERHE={safe:['בטוח','סולם האקורד'],color:['צבעוני','צבע ומתח'],out:['מחוץ לקופסה','גישות יצירתיות']};
+const CONS={none:'ללא',three:'3 צלילים',one:'צליל אחד',off:'רק לא-מודגשות'};
+
+const DEF={name:'',lib:'jz5',tonic:7,home:'aeolian',meter:'4/4',bpm:120,bars:[],chains:true,blues:false,drums:'swing',bass:'walking',comp:'piano',
+  countIn:true,loop:true,follow:true,inst:'keys',tier:'safe',pick:{safe:0,color:0,out:0},view:'chord',loopPick:0,
+  mix:{drums:{v:.8,m:false},bass:{v:.85,m:false},comp:{v:.7,m:false},click:{v:.55,m:true}},
+  trade:false,target:false,cue:false,rotate:false,cons:'none',randKey:false,randEvery:2,speed:false,speedStep:5,speedEvery:2,speedMax:200,libCat:'jazz'};
+let state=JSON.parse(JSON.stringify(DEF));
+let pos=0,editBar=null,consSel=null,shownCycle=-1,totalLoops=0,elapsed=0,lastTick=0;
+
+function lsGet(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch(e){return null;}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+let saveT=null;function saveLast(){clearTimeout(saveT);saveT=setTimeout(()=>lsSet('hloops.last',state),300);}
+
+function applyTemplate(t){
+  Object.assign(state,{name:t.name,lib:t.id||null,tonic:t.tonic,home:t.home,meter:t.meter||'4/4',bpm:t.bpm,bars:typeof t.bars==='string'?parseBars(t.bars):JSON.parse(JSON.stringify(t.bars)),chains:!!t.chains,blues:!!t.blues,drums:t.drums,bass:t.bass,comp:t.comp});
+  if(STY[state.drums].m!==state.meter)state.drums=METER[state.meter].def;
+  pos=0;editBar=null;state.pick={safe:0,color:0,out:0};state.loopPick=0;
+}
+
+let Rk='',Rc=null;
+function R(){const k=JSON.stringify([state.tonic,state.home,state.bars,state.chains,state.blues]);if(Rc&&k===Rk)return Rc;Rk=k;Rc=resolveProg({tonic:state.tonic,home:state.home,bars:state.bars,chains:state.chains,blues:state.blues});if(pos>=Rc.chords.length)pos=0;return Rc;}
+
+/* ================= AUDIO ================= */
+let AC=null,master=null,noise=null;
+function ensureAC(){if(AC)return;AC=new(window.AudioContext||window.webkitAudioContext)();
+  const comp=AC.createDynamicsCompressor();comp.threshold.value=-16;comp.ratio.value=3;comp.attack.value=.004;comp.release.value=.2;
+  master=AC.createGain();master.gain.value=.9;master.connect(comp);comp.connect(AC.destination);
+  noise=AC.createBuffer(1,AC.sampleRate,AC.sampleRate);const d=noise.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;}
+const hz=m=>440*Math.pow(2,(m-69)/12);
+function osc(type,f,t,end,dest){const o=AC.createOscillator();o.type=type;o.frequency.setValueAtTime(f,t);o.connect(dest);o.start(t);o.stop(end);return o;}
+function gainAt(dest,v,t){const g=AC.createGain();g.gain.setValueAtTime(v,t);g.connect(dest);return g;}
+function nz(t,dur,dest){const s=AC.createBufferSource();s.buffer=noise;s.connect(dest);s.start(t,Math.random()*.5);s.stop(t+dur);return s;}
+function filt(type,f,q,dest){const b=AC.createBiquadFilter();b.type=type;b.frequency.value=f;if(q)b.Q.value=q;b.connect(dest);return b;}
+const DR={
+  kick(b,t,v){const g=gainAt(b,v,t);g.gain.exponentialRampToValueAtTime(.001,t+.38);const o=osc('sine',140,t,t+.4,g);o.frequency.exponentialRampToValueAtTime(44,t+.13);},
+  snare(b,t,v){const g=gainAt(b,v*.6,t);g.gain.exponentialRampToValueAtTime(.001,t+.17);nz(t,.2,filt('highpass',1300,0,g));const g2=gainAt(b,v*.35,t);g2.gain.exponentialRampToValueAtTime(.001,t+.09);osc('triangle',190,t,t+.1,g2);},
+  hat(b,t,v){const g=gainAt(b,v*.28,t);g.gain.exponentialRampToValueAtTime(.001,t+.045);nz(t,.06,filt('highpass',7500,0,g));},
+  hatf(b,t,v){const g=gainAt(b,v*.22,t);g.gain.exponentialRampToValueAtTime(.001,t+.035);nz(t,.05,filt('highpass',6500,0,g));},
+  ride(b,t,v){const g=gainAt(b,v*.13,t);g.gain.exponentialRampToValueAtTime(.001,t+.6);nz(t,.62,filt('bandpass',6200,.9,g));const g2=gainAt(b,v*.035,t);g2.gain.exponentialRampToValueAtTime(.001,t+.4);osc('square',3150,t,t+.42,filt('highpass',3000,0,g2));},
+  rim(b,t,v){const g=gainAt(b,v*.45,t);g.gain.exponentialRampToValueAtTime(.001,t+.04);osc('triangle',1750,t,t+.05,filt('bandpass',1800,4,g));},
+  doum(b,t,v){const g=gainAt(b,v*.9,t);g.gain.exponentialRampToValueAtTime(.001,t+.45);const o=osc('sine',115,t,t+.46,g);o.frequency.exponentialRampToValueAtTime(72,t+.2);const g2=gainAt(b,v*.2,t);g2.gain.exponentialRampToValueAtTime(.001,t+.08);nz(t,.1,filt('lowpass',400,0,g2));},
+  tek(b,t,v){const g=gainAt(b,v*.45,t);g.gain.exponentialRampToValueAtTime(.001,t+.06);nz(t,.08,filt('bandpass',2600,2,g));const g2=gainAt(b,v*.18,t);g2.gain.exponentialRampToValueAtTime(.001,t+.05);osc('sine',900,t,t+.06,g2);},
+};
+function click(b,t,v,acc){const g=gainAt(b,v*.5,t);g.gain.exponentialRampToValueAtTime(.001,t+.05);osc('sine',acc?1650:1150,t,t+.06,g);}
+function bell(b,t,m){const g=gainAt(b,.0001,t);g.gain.exponentialRampToValueAtTime(.22,t+.005);g.gain.exponentialRampToValueAtTime(.001,t+.9);osc('sine',hz(m),t,t+.95,g);const g2=gainAt(b,.05,t);g2.gain.exponentialRampToValueAtTime(.001,t+.3);osc('sine',hz(m)*2.76,t,t+.32,g2);}
+function bassNote(b,t,m,dur,v){const g=gainAt(b,.0001,t);g.gain.exponentialRampToValueAtTime(v*.5,t+.008);g.gain.setTargetAtTime(v*.32,t+.03,.25);g.gain.setTargetAtTime(.0001,t+dur,.035);
+  const f=AC.createBiquadFilter();f.type='lowpass';f.Q.value=2;f.frequency.setValueAtTime(1300,t);f.frequency.setTargetAtTime(420,t+.01,.18);f.connect(g);
+  osc('sawtooth',hz(m),t,t+dur+.3,f);const g2=gainAt(g,.9,t);osc('sine',hz(m),t,t+dur+.3,g2);}
+function padChord(b,t,ms,dur,v){for(const m of ms){const g=gainAt(b,.0001,t);g.gain.exponentialRampToValueAtTime(v*.06,t+.15);g.gain.setTargetAtTime(.0001,t+dur,.22);const f=filt('lowpass',1500,.6,g);
+  const o1=osc('sawtooth',hz(m),t,t+dur+1.2,f);o1.detune.value=-7;const o2=osc('sawtooth',hz(m),t,t+dur+1.2,f);o2.detune.value=7;}}
+function epiano(b,t,ms,dur,v){for(const m of ms){const g=gainAt(b,.0001,t);g.gain.exponentialRampToValueAtTime(v*.13,t+.004);g.gain.setTargetAtTime(v*.035,t+.01,.45);g.gain.setTargetAtTime(.0001,t+dur,.07);
+  osc('sine',hz(m),t,t+dur+.6,g);const g2=gainAt(g,.25,t);g2.gain.setTargetAtTime(.0001,t,.15);osc('sine',hz(m)*2,t,t+dur+.6,g2);const g3=gainAt(g,.18,t);osc('triangle',hz(m),t,t+dur+.6,g3);}}
+function guitarChord(b,t,ms,dur,v,up){const list=up?[...ms].reverse():ms;list.forEach((m,i)=>{const tt=t+i*.011;const g=gainAt(b,.0001,tt);g.gain.exponentialRampToValueAtTime(v*.075,tt+.003);g.gain.setTargetAtTime(v*.02,tt+.01,.3);g.gain.setTargetAtTime(.0001,t+dur,.05);
+  const f=AC.createBiquadFilter();f.type='lowpass';f.Q.value=1;f.frequency.setValueAtTime(3400,tt);f.frequency.setTargetAtTime(750,tt+.005,.14);f.connect(g);osc('sawtooth',hz(m),tt,t+dur+.4,f);});}
+
+/* voicing & bass logic */
+let prevV=null,prevB=null;
+function voicePcs(c){const sp=new Set(c.recs.S[0].rel);return c.Qd.v.map(x=>{if(x==='9'&&!sp.has(2)){if(c.fam==='dom')return sp.has(1)?'b9':null;return sp.has(5)?'11':null;}return x;}).filter(Boolean).map(x=>mod(c.rp+dg(x).s));}
+function voiceFor(c){const pcs=[...new Set(voicePcs(c))];let best=null,bs=1e9;
+  for(let r=0;r<pcs.length;r++){const rot=pcs.slice(r).concat(pcs.slice(0,r));
+    for(let low=50;low<=66;low++){if(mod(low)!==rot[0])continue;const v=[low];let cur=low;for(let i=1;i<rot.length;i++){cur=cur+(mod(rot[i]-cur)||12);v.push(cur);}
+      if(v[v.length-1]>77)continue;const avg=v.reduce((a,b)=>a+b,0)/v.length;let sc=Math.abs(avg-63)*(prevV?.35:1);
+      if(prevV){if(prevV.length===v.length)sc+=v.reduce((t,n,i)=>t+Math.abs(n-prevV[i]),0);else sc+=v.reduce((t,n)=>t+Math.min(...prevV.map(p=>Math.abs(p-n))),0);}
+      if(sc<bs){bs=sc;best=v;}}}
+  prevV=best;return best;}
+const rootMidi=p=>28+mod(p-4);
+const nearM=(p,ref)=>{let m=ref+mod(p-ref);if(m-ref>6)m-=12;return m;};
+const clampB=m=>{while(m<28)m+=12;while(m>55)m-=12;return m;};
+const toneSemi=(c,prefix)=>{const t=c.Qd.t.find(x=>prefix.includes(x));return t?mod(dg(t).s):null;};
+function bassLine(c,n,mode,keyPc){
+  if(mode==='pedal')return Array(n).fill(rootMidi(keyPc));
+  let r=rootMidi(c.rp);if(prevB!=null&&Math.abs(r+12-prevB)<Math.abs(r-prevB)&&r+12<=45)r+=12;
+  if(mode==='roots')return Array(n).fill(r);
+  const f5=toneSemi(c,['5','b5','#5'])??7,f3=toneSemi(c,['3','b3','4'])??4,f7=toneSemi(c,['b7','7','6','bb7']);
+  const nr=nearM(c.next.rp,r);const appr=nr===r?r-5:(nr>r?nr-1:nr+1);
+  if(n===1)return[r];
+  if(mode==='motion'){const seq=[r,r+f5,r+12,r+f5];const out=[];for(let i=0;i<n;i++)out.push(seq[i%4]);if(n>=3)out[n-1]=appr;return out.map(clampB);}
+  const up=nr>=r||r>40;let mid;
+  if(n===2)mid=[];else if(n===3)mid=[up?r+f5:r-(12-f5)];else{mid=up?[r+(f3<=4?f3:2),r+f5]:[r-(12-(f7??10)),r-(12-f5)];for(let i=4;i<n;i++)mid.push(r+f5);}
+  return[r,...mid,appr].map(clampB);
+}
+
+/* scheduler */
+let playing=false,timer=null,nextT=0,curBar=0,gBar=0,cyc=0,countLeft=0,stopAt=0,uiQ=[],sess=null,B=null;
+function applyMix(){if(!B)return;for(const k of['drums','bass','comp','click']){const m=state.mix[k];B[k].gain.setTargetAtTime(m.m?0:m.v,AC.currentTime,.02);}B.cue.gain.value=.8;}
+function start(){ensureAC();if(AC.state!=='running')AC.resume();sess=AC.createGain();sess.connect(master);B={};
+  for(const k of['drums','bass','comp','click','cue']){B[k]=AC.createGain();B[k].connect(sess);}applyMix();
+  playing=true;curBar=0;gBar=0;cyc=0;countLeft=state.countIn?1:0;stopAt=0;uiQ=[];prevV=null;prevB=null;shownCycle=-1;
+  nextT=AC.currentTime+.08;lastTick=performance.now();timer=setInterval(tick,25);tick();renderTransport();}
+function stop(){playing=false;clearInterval(timer);timer=null;if(sess){const s=sess;s.gain.setTargetAtTime(0,AC.currentTime,.015);setTimeout(()=>{try{s.disconnect();}catch(e){}},400);}sess=null;B=null;uiQ=[];renderTransport();setDots(-1);renderNow();markStrip();}
+function tick(){if(!playing)return;if(stopAt&&AC.currentTime>=stopAt){stop();return;}while(playing&&!stopAt&&nextT<AC.currentTime+.22)schedBar();}
+function cycleChanges(){let ch=false;
+  if(state.speed&&cyc%Math.max(1,state.speedEvery)===0&&state.bpm<state.speedMax){state.bpm=Math.min(state.speedMax,state.bpm+state.speedStep);ch=true;}
+  if(state.randKey&&cyc%Math.max(1,state.randEvery)===0){let k;do{k=Math.floor(Math.random()*12);}while(k===state.tonic);state.tonic=k;prevV=null;ch=true;setTimeout(renderAll,0);}
+  if(ch){renderTransport();saveLast();}}
+function schedBar(){
+  const t0=nextT;
+  if(countLeft>0){const m=METER[state.meter],barDur=60/state.bpm*m.beats,dd=barDur/m.dots;
+    for(let d=0;d<m.dots;d++){if(state.meter!=='6/8'||d%3===0)click(B.cue,t0+d*dd,d===0?1:.6,d===0);uiQ.push({t:t0+d*dd,k:'count',i:d});}
+    countLeft--;nextT+=barDur;return;}
+  let L=R();if(curBar>=L.bars.length)curBar=0;
+  if(curBar===0&&gBar>0){if(!state.loop){stopAt=t0;return;}cyc++;cycleChanges();L=R();}
+  const m=METER[state.meter],barDur=60/state.bpm*m.beats,dd=barDur/m.dots;
+  let st=STY[state.drums];if(st.m!==state.meter)st=STY[m.def];
+  const S=st.S,sd=barDur/S,bar=L.bars[curBar];
+  const half=bar.length>1?Math.round(S*m.split):S;
+  const segs=bar.map((c,k)=>({c,s0:k?half:0,s1:k?S:half}));
+  const trade=state.trade&&Math.floor(gBar/4)%2===1;
+  for(const k in st.dr){const p=st.dr[k];for(let s=0;s<S;s++){const v=VEL[p[s]];if(v)DR[k](B.drums,t0+s*sd,v);}}
+  const bps=S/m.beats;
+  segs.forEach(g=>{
+    let on=[];if(state.bass==='walking'){for(let s=g.s0;s<g.s1;s+=bps)on.push(Math.round(s));}
+    else{for(let s=g.s0;s<g.s1;s++)if(st.bass[s]!=='.')on.push(s);if(!on.length||on[0]!==g.s0)on.unshift(g.s0);}
+    const line=bassLine(g.c,on.length,state.bass,L.tonic);
+    on.forEach((s,i)=>{const e=i+1<on.length?on[i+1]:g.s1;const v=state.bass==='walking'?(i===0?.95:.8):VEL[st.bass[s]]||.9;bassNote(B.bass,t0+s*sd,line[i],(e-s)*sd*.9,v);});
+    prevB=line[line.length-1];
+    if(!trade){const vo=voiceFor(g.c);
+      if(state.comp==='pad')padChord(B.comp,t0+g.s0*sd,vo,(g.s1-g.s0)*sd,1);
+      else{const pat=st[state.comp];let hits=[];for(let s=g.s0;s<g.s1;s++)if(pat[s]!=='.')hits.push(s);if(!hits.length)hits=[g.s0];
+        hits.forEach((s,i)=>{const ch=pat[s]||'x';const e=i+1<hits.length?hits[i+1]:g.s1;const len=ch==='s'?Math.min(1.4,e-s):(e-s);const v=VEL[ch]||.75;
+          if(state.comp==='piano')epiano(B.comp,t0+s*sd,vo,len*sd*.95,v);else guitarChord(B.comp,t0+s*sd,vo,len*sd*.95,v,i%2===1);});}}
+    if(state.target&&state.cue){const th=toneSemi(g.c,['3','b3','4']);if(th!=null)bell(B.cue,t0+g.s0*sd,nearM(mod(g.c.rp+th),76));}
+    uiQ.push({t:t0+g.s0*sd,k:'chord',i:g.c.idx,bar:curBar,cyc,trade});
+  });
+  for(let d=0;d<m.dots;d++){if(!state.mix.click.m&&(state.meter!=='6/8'||d%3===0))click(B.click,t0+d*dd,d===0?1:.6,d===0);uiQ.push({t:t0+d*dd,k:'dot',i:d});if(state.cons==='off')uiQ.push({t:t0+(d+.5)*dd,k:'and',i:d});}
+  uiQ.sort((a,b)=>a.t-b.t);
+  curBar=(curBar+1)%L.bars.length;gBar++;nextT+=barDur;
+}
+let tradeNow=false;
+function frame(){if(playing&&AC){const now=AC.currentTime;while(uiQ.length&&uiQ[0].t<=now)onUi(uiQ.shift());}requestAnimationFrame(frame);}
+function onUi(e){
+  if(e.k==='count'){setPill('count','ספירה '+(e.i+1));setDots(e.i);return;}
+  if(e.k==='dot'){setDots(e.i);return;}
+  if(e.k==='and'){setDots(e.i,true);return;}
+  if(e.k==='chord'){pos=e.i;tradeNow=e.trade;
+    if(e.cyc!==shownCycle){shownCycle=e.cyc;if(e.cyc>0)totalLoops++;$('tLoops').textContent=totalLoops;
+      if(state.rotate){state.tier=TIERS[e.cyc%3];state.pick[state.tier]=0;state.view='chord';}
+      if(state.cons!=='none')pickCons();}
+    setPill(e.trade?'solo':'play',e.trade?'תורך – בס ותופים':'ליווי מלא');
+    $('barTxt').textContent=(e.bar+1)+'/'+R().bars.length;
+    renderNow();markStrip();follow();}
+}
+
+/* ================= UI ================= */
+function setPill(cls,txt){const p=$('segPill');p.className='seg '+cls;p.textContent=txt;}
+function renderDots(){const m=METER[state.meter];let h='';for(let d=0;d<m.dots;d++){const one=d===0||(state.meter==='6/8'&&d===3);h+=`<i class="${one?'one':''}" data-d="${d}"></i>`;if(state.cons==='off')h+=`<i class="and" data-a="${d}"></i>`;}$('beats').innerHTML=h;}
+function setDots(i,and){$('beats').querySelectorAll('i').forEach(el=>{if(and)el.classList.toggle('on',el.dataset.a==i);else el.classList.toggle('on',el.dataset.d==i);});}
+function renderTransport(){
+  $('bpmVal').textContent=state.bpm;$('bpmRange').value=state.bpm;$('bpmUnit').textContent=state.meter==='6/8'?'♩. BPM':'BPM';
+  $('playIcon').innerHTML=playing?'<rect x="6" y="5" width="4" height="14" fill="currentColor"/><rect x="14" y="5" width="4" height="14" fill="currentColor"/>':'<path d="M7 4l13 8-13 8z" fill="currentColor"/>';
+  $('play').setAttribute('aria-label',playing?'עצור':'נגן');
+  document.querySelectorAll('#meterSel button').forEach(b=>b.classList.toggle('on',b.dataset.v===state.meter));
+  $('ciBtn').classList.toggle('on',state.countIn);$('loopBtn').classList.toggle('on',state.loop);
+  const L=R();const ks=$('keySel');ks.innerHTML=Array.from({length:12},(_,p)=>`<option value="${p}">${nm(keyTonic(p,state.home))}</option>`).join('');ks.value=state.tonic;
+  if(!playing){setPill('','עצור');$('barTxt').textContent=(L.chords[pos]?L.chords[pos].bar+1:1)+'/'+L.bars.length;}
+  renderDots();
+}
+function curC(){const L=R();return L.chords[Math.min(pos,L.chords.length-1)];}
+function tierList(c,t){return c.recs[{safe:'S',color:'C',out:'O'}[t]];}
+function displayScale(){const L=R(),c=curC();
+  if(state.view==='loop'){const it=L.loop[Math.min(state.loopPick,L.loop.length-1)];const notes=it.notes.map(n=>{const rel=mod(pc(n)-c.rp);const role=roleOf(rel,c);return{n,rel,role,iv:SC[it.id].h?ivl(c,n,role):ivlPc(c,rel,role)};});
+    return{name:it.name,en:SC[it.id].en,char:SC[it.id].c,why:it.note,notes,tier:it.kind==='blues'?'out':it.kind==='partial'?'color':'safe',inside:c.Qd.core.every(x=>notes.some(o=>o.rel===x)),loop:true};}
+  const list=tierList(c,state.tier);const r=list[Math.min(state.pick[state.tier],list.length-1)];
+  return{name:r.name,en:r.en,char:SC[r.id].c,why:r.why,notes:r.notes,tier:state.tier,inside:r.inside,sub:r.sub,id:r.id};}
+function thirdOf(c){const t=c.Qd.t.find(x=>['3','b3','4'].includes(x));const i=c.Qd.t.indexOf(t);return{n:c.tones[i],deg:acc2(t)};}
+function renderNow(){
+  const L=R(),c=curC(),nx=c.next;
+  $('nSym').textContent=c.sym;$('nRn').textContent=c.rn;$('nCtx').textContent=c.recs.label;
+  $('xSym').textContent=nx.sym;$('xRn').textContent=nx.rn;
+  let b='';
+  if(playing&&tradeNow)b+=`<div class="banner solo"><span class="tag">TRADE 4s</span><b>ארבע תיבות שלכם – בס ותופים בלבד</b></div>`;
+  if(state.target){const a=thirdOf(c),z=thirdOf(nx);b+=`<div class="banner target"><span class="tag">צליל מטרה</span>נחתו על <span class="nn">${nm(a.n)}</span> (${a.deg} של ${c.sym}) בפעמה 1 · הבא: <span class="nn">${nm(z.n)}</span> ב-${nx.sym}</div>`;}
+  if(state.cons!=='none'){const txt=state.cons==='off'?'נגנו רק על ה"ו" – לא על 1, 2, 3, 4':state.cons==='one'?`רק ריתמוס על צליל אחד: <span class="nn">${consSel?consSel.names.join(' '):''}</span>`:`רק שלושת הצלילים: <span class="nn">${consSel?consSel.names.join(' · '):''}</span>`;b+=`<div class="banner"><span class="tag">מגבלה יצירתית</span>${txt}</div>`;}
+  $('banners').innerHTML=b;
+  document.querySelectorAll('.viewtabs button').forEach(x=>x.classList.toggle('on',x.dataset.v===state.view));
+  let tb='';
+  if(state.view==='chord'){
+    tb='<div class="tiers">'+TIERS.map(t=>`<button class="tier${state.tier===t?' on':''}" data-act="tier" data-v="${t}"><b>${TIERHE[t][0]}</b><small>${TIERHE[t][1]} · ${tierList(c,t).length}</small></button>`).join('')+'</div>';
+    const list=tierList(c,state.tier),pi=Math.min(state.pick[state.tier],list.length-1);
+    tb+='<div class="opts">'+list.map((r,i)=>`<button class="opt${i===pi?' on':''}" data-act="opt" data-i="${i}">${r.name}</button>`).join('')+'</div>';
+  }else{
+    tb='<div class="looplist">'+L.loop.map((it,i)=>`<button class="loopitem${i===Math.min(state.loopPick,L.loop.length-1)?' on':''}" data-act="loopitem" data-i="${i}"><b>${it.name}<span class="kind ${it.kind}">${{full:'מכסה הכול',pent:'פנטטוני בטוח',partial:'הכי קרוב',blues:'בלוז'}[it.kind]}</span></b><small>${it.note}</small></button>`).join('')+'</div>';
+  }
+  $('tierBox').innerHTML=tb;
+  const ds=displayScale();const only=state.cons==='three'||state.cons==='one'?new Set(consSel?consSel.pcs:[]):null;
+  const chk=ds.sub?'<span class="check ok">✓ תת-קבוצה בלי צלילי הימנעות</span>':ds.tier==='out'?'<span class="check outx">מחוץ לקופסה – לא נבדק מול האקורד</span>':ds.inside?'<span class="check ok">✓ מכיל את כל צלילי האקורד</span>':'<span class="check">לא מכיל את כל צלילי האקורד הנוכחי</span>';
+  $('sInfo').innerHTML=`<div class="sname"><b>${ds.name}</b><span class="en">${ds.en}</span>${chk}</div><p class="schar">${ds.char}</p>${ds.why?`<p class="swhy">${ds.why}</p>`:''}
+    <div class="notes">${ds.notes.map(o=>`<div class="nt ${o.role}${only&&!only.has(pc(o.n))?' dim':''}"><b>${nm(o.n)}</b><small>${o.iv}</small></div>`).join('')}</div>`;
+  renderInstr(ds,c,only);
+}
+function renderInstr(ds,c,only){
+  const el=$('instr');el.className='instr '+state.inst;
+  document.querySelectorAll('#instSel button').forEach(b=>b.classList.toggle('on',b.dataset.v===state.inst));
+  const map=new Map();ds.notes.forEach(o=>{const p=pc(o.n);if(!map.has(p))map.set(p,o);});
+  const tgt=state.target?pc(thirdOf(c).n):null;
+  const col=r=>r==='ct'?'var(--ct)':r==='tn'?'var(--tn)':'var(--av)';
+  const dot=(x,y,r,o,p)=>{const dim=only&&!only.has(p);return`<g opacity="${dim?.22:1}">${p===tgt?`<circle cx="${x}" cy="${y}" r="${r+4}" fill="none" stroke="#fff" stroke-width="2.5"/>`:''}<circle cx="${x}" cy="${y}" r="${r}" fill="${col(o.role)}" ${p===c.rp?'stroke="#fff" stroke-width="2"':''}/><text x="${x}" y="${y+4}" text-anchor="middle" font-size="${r>11?12:11}" font-family="Rubik,system-ui,sans-serif" font-weight="500" fill="#10131a">${nm(o.n)}</text></g>`;};
+  if(state.inst==='keys'){
+    const ww=36,wh=150,bw=22,bh=94,lo=48,hi=72;let whites='',blacks='',dots='',wi=0;const wx={};
+    for(let m=lo;m<=hi;m++){const p=mod(m);if([1,3,6,8,10].includes(p))continue;wx[m]=wi*ww;whites+=`<rect x="${wi*ww+1}" y="1" width="${ww-2}" height="${wh}" rx="4" fill="var(--ivory)"/>`;if(map.has(p))dots+=dot(wi*ww+ww/2,wh-24,13,map.get(p),p);wi++;}
+    for(let m=lo;m<=hi;m++){const p=mod(m);if(![1,3,6,8,10].includes(p))continue;const x=wx[m-1]+ww-bw/2;blacks+=`<rect x="${x}" y="1" width="${bw}" height="${bh}" rx="3" fill="var(--ebony)"/>`;if(map.has(p))blacks+=dot(x+bw/2,bh-18,11,map.get(p),p);}
+    el.innerHTML=`<svg viewBox="0 0 ${wi*ww} ${wh+4}" role="img" aria-label="מקלדת">${whites}${dots}${blacks}</svg>`;
+  }else{
+    const fw=50,x0=46,sp=26,y0=22,tun=[64,59,55,50,45,40],W=x0+12*fw+14,H=y0+5*sp+34;
+    let s=`<rect x="${x0}" y="${y0-12}" width="${12*fw}" height="${5*sp+24}" rx="4" fill="var(--wood)"/>`;
+    [3,5,7,9].forEach(f=>s+=`<circle cx="${x0+(f-.5)*fw}" cy="${y0+2.5*sp}" r="5" fill="#4a3e30"/>`);s+=`<circle cx="${x0+11.5*fw}" cy="${y0+1.5*sp}" r="5" fill="#4a3e30"/><circle cx="${x0+11.5*fw}" cy="${y0+3.5*sp}" r="5" fill="#4a3e30"/>`;
+    for(let f=0;f<=12;f++)s+=`<line x1="${x0+f*fw}" y1="${y0-12}" x2="${x0+f*fw}" y2="${y0+5*sp+12}" stroke="${f===0?'#d9d2c3':'#6d6556'}" stroke-width="${f===0?5:2}"/>`;
+    tun.forEach((t,i)=>s+=`<line x1="${x0-30}" y1="${y0+i*sp}" x2="${x0+12*fw}" y2="${y0+i*sp}" stroke="var(--wire)" stroke-width="${1+i*.35}"/>`);
+    for(let f=1;f<=12;f++)s+=`<text x="${x0+(f-.5)*fw}" y="${H-4}" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="JetBrains Mono,monospace">${f}</text>`;
+    tun.forEach((t,i)=>{for(let f=0;f<=12;f++){const p=mod(t+f);if(!map.has(p))continue;const x=f===0?x0-18:x0+(f-.5)*fw;s+=dot(x,y0+i*sp,11,map.get(p),p);}});
+    el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="צוואר גיטרה">${s}</svg>`;
+  }
+}
+const BW=()=>innerWidth<560?98:124;
+function renderStrip(){
+  const L=R(),bw=BW();$('pName').textContent=state.name||'לופ חדש';$('pKey').textContent=`${nm(L.T)} · ${SC[state.home].he}`;
+  $('homeSel').innerHTML=HOMES.map(h=>`<option value="${h}">${SC[h].he}</option>`).join('');$('homeSel').value=state.home;
+  $('chainsBtn').classList.toggle('on',state.chains);$('followBtn').classList.toggle('on',state.follow);
+  $('strip').innerHTML=L.bars.map((bar,bi)=>`<div class="bar${bi===editBar?' sel':''}" style="width:${bw}px"><span class="bn">${bi+1}</span><div class="bch">${bar.map(c=>`<button class="tile" data-act="tile" data-i="${c.idx}" id="tile${c.idx}"><b>${c.sym}</b><small>${c.rn}</small></button>`).join('')}</div></div>`).join('');
+  renderGuide();markStrip();renderEditor();requestAnimationFrame(syncScroller);
+}
+function guidePair(c){const a=c.Qd.t.findIndex(x=>['3','b3','4'].includes(x));let b=c.Qd.t.findIndex(x=>['7','b7','bb7','6'].includes(x));if(b<0)b=c.Qd.t.findIndex(x=>['5','b5','#5'].includes(x));return[c.tones[a],c.tones[b]];}
+function renderGuide(){
+  const L=R(),bw=BW(),gap=6;let A=null,Bv=null;const pts=L.chords.map(c=>{const g=guidePair(c),p0=pc(g[0]),p1=pc(g[1]);
+    if(A===null){A=nearM(p0,60);Bv=A+mod(p1-A)||12;return{c,v:[A,Bv],n:[g[0],g[1]]};}
+    const o1=[nearM(p0,A),nearM(p1,Bv)],o2=[nearM(p1,A),nearM(p0,Bv)];const c1=Math.abs(o1[0]-A)+Math.abs(o1[1]-Bv),c2=Math.abs(o2[0]-A)+Math.abs(o2[1]-Bv);
+    let n;if(c1<=c2){[A,Bv]=o1;n=[g[0],g[1]];}else{[A,Bv]=o2;n=[g[1],g[0]];}return{c,v:[A,Bv],n};});
+  const W=L.bars.length*(bw+gap)-gap,H=112;const all=pts.flatMap(p=>p.v),lo=Math.min(...all),hi=Math.max(...all),span=Math.max(6,hi-lo);
+  const y=m=>H-18-(m-lo)/span*(H-40);const x=c=>c.bar*(bw+gap)+(c.ci+.5)*bw/c.nIn;
+  let s='';const cur=curC();s+=`<rect x="${cur.bar*(bw+gap)+cur.ci*bw/cur.nIn}" y="0" width="${bw/cur.nIn}" height="${H}" rx="8" fill="var(--pad)"/>`;
+  [0,1].forEach(v=>{const colr=v?'var(--brass)':'var(--tn)';s+=`<polyline fill="none" stroke="${colr}" stroke-width="2" stroke-linejoin="round" points="${pts.map(p=>x(p.c)+','+y(p.v[v])).join(' ')}"/>`;
+    pts.forEach((p,i)=>{if(i){const q=pts[i-1],d=p.v[v]-q.v[v],ad=Math.abs(d);const lab=ad===0?'=':ad===1?'½':ad===2?'1':String(ad);const mx=(x(p.c)+x(q.c))/2,my=(y(p.v[v])+y(q.v[v]))/2-7;
+      s+=`<text x="${mx}" y="${my}" text-anchor="middle" font-size="11" font-family="JetBrains Mono,monospace" fill="${ad<=1?colr:'var(--muted)'}">${lab}</text>`;}});
+    pts.forEach(p=>{s+=`<circle cx="${x(p.c)}" cy="${y(p.v[v])}" r="12" fill="var(--panel)" stroke="${colr}" stroke-width="2"/><text x="${x(p.c)}" y="${y(p.v[v])+4}" text-anchor="middle" font-size="11" font-family="Rubik,system-ui,sans-serif" fill="var(--text)">${nm(p.n[v])}</text>`;});});
+  const g=$('guide');g.setAttribute('viewBox',`0 0 ${W} ${H}`);g.setAttribute('width',W);g.setAttribute('height',H);g.innerHTML=s;
+}
+function markStrip(){const L=R(),c=curC();document.querySelectorAll('#strip .tile').forEach(t=>{const i=+t.dataset.i;t.classList.toggle('now',i===c.idx);const isN=i===c.next.idx&&c.next!==c;t.classList.toggle('next',isN);
+  let tag=t.querySelector('.nx');if(isN&&!tag){tag=document.createElement('span');tag.className='nx';tag.textContent='הבא';t.appendChild(tag);}if(!isN&&tag)tag.remove();});
+  renderGuideCursor();}
+function renderGuideCursor(){const g=$('guide').querySelector('rect');if(!g)return;const c=curC(),bw=BW();g.setAttribute('x',c.bar*(bw+6)+c.ci*bw/c.nIn);g.setAttribute('width',bw/c.nIn);}
+function follow(){if(!state.follow)return;const t=$('tile'+curC().idx),w=$('stripWrap');if(!t)return;const bar=t.closest('.bar');const left=bar.offsetLeft-w.clientWidth/2+bar.offsetWidth/2;w.scrollTo({left:Math.max(0,left),behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth'});}
+function syncScroller(){const w=$('stripWrap'),max=w.scrollWidth-w.clientWidth;$('scroller').hidden=max<=4;$('stripScroll').value=max>0?Math.round(w.scrollLeft/max*1000):0;}
+function renderEditor(){
+  const el=$('editor');if(editBar==null||!state.bars[editBar]){el.innerHTML='';return;}
+  const L=R(),bar=state.bars[editBar];
+  let h=`<div class="editor"><div class="edhead"><b>עריכת תיבה ${editBar+1}</b><button class="act" data-act="bar-add">+ תיבה אחריה</button><button class="act" data-act="bar-dup">שכפל</button>${state.bars.length>1?`<button class="act warn" data-act="bar-del">מחק תיבה</button>`:''}<button class="act" data-act="ed-close">סגור</button></div>`;
+  bar.forEach((c,k)=>{h+=`<div class="edchord"><div class="edrow"><span class="lbl">${bar.length>1?(k?'אקורד שני':'אקורד ראשון'):'אקורד'}</span><select data-edroot="${k}" aria-label="שורש">${DEGS.map(d=>`<option value="${d}"${d===c.d?' selected':''}>${nm(simp(spell(L.T,d)))} · ${roman(d,'maj')}</option>`).join('')}</select>${k?`<button class="act" data-act="ed-rm2">הסר</button>`:''}</div>
+    <div class="qchips">${QORDER.map(q=>`<button data-act="ed-q" data-k="${k}" data-q="${q}" class="${q===c.q?'on':''}">${Q[q].he}</button>`).join('')}</div></div>`;});
+  if(bar.length<2)h+=`<div><button class="act" data-act="ed-add2">+ אקורד שני בתיבה</button></div>`;
+  el.innerHTML=h+'</div>';
+}
+function renderAcc(){
+  const st=Object.entries(STY).filter(([k,v])=>v.m===state.meter);
+  const row=(ch,he)=>`<div class="mixrow"><span>${he}</span><input type="range" min="0" max="1" step="0.01" value="${state.mix[ch].v}" data-vol="${ch}" aria-label="עוצמת ${he}"><button class="mute${state.mix[ch].m?' on':''}" data-act="mute" data-ch="${ch}">${state.mix[ch].m?'מושתק':'השתק'}</button></div>`;
+  $('accCard').innerHTML=`<div class="cardhead"><h2>ליווי</h2></div>
+   <div class="sub">סגנון תופים</div><div class="group">${st.map(([k,v])=>`<button data-act="drums" data-v="${k}" class="${state.drums===k?'on':''}">${v.he}</button>`).join('')}</div>
+   <div class="sub">קו בס</div><div class="group">${Object.entries(BASSM).map(([k,v])=>`<button data-act="bass" data-v="${k}" class="${state.bass===k?'on':''}">${v}</button>`).join('')}</div>
+   <div class="sub">קומפינג (בהובלת קולות קרובה)</div><div class="group">${Object.entries(COMPM).map(([k,v])=>`<button data-act="comp" data-v="${k}" class="${state.comp===k?'on':''}">${v}</button>`).join('')}</div>
+   <div class="sub">מיקסר</div>${row('drums','תופים')}${row('bass','בס')}${row('comp','קומפינג')}${row('click','מטרונום')}`;
+}
+function sw(id,on,act){return`<label class="sw"><input type="checkbox" id="${id}" data-act="${act}" ${on?'checked':''}><span></span></label>`;}
+function renderPrac(){
+  $('pracCard').innerHTML=`<div class="cardhead"><h2>מצבי תרגול</h2></div>
+   <div class="field"><div class="fl">Trade 4s<small>ארבע תיבות ליווי מלא, ואז ארבע תיבות של בס ותופים בלבד</small></div>${sw('swTrade',state.trade,'trade')}</div>
+   <div class="field"><div class="fl">צליל מטרה<small>לנחות על הטרצה של כל אקורד בפעמה 1</small></div><div class="inl"><button class="chip${state.cue?' on':''}" data-act="cue" ${state.target?'':'disabled'}>רמז שמיעתי</button>${sw('swTarget',state.target,'target')}</div></div>
+   <div class="field"><div class="fl">סולם אחר בכל סבב<small>בטוח → צבעוני → מחוץ לקופסה, מתחלף בכל סבב</small></div>${sw('swRotate',state.rotate,'rotate')}</div>
+   <div class="field"><div class="fl">מגבלה יצירתית<small>צלילים נבחרים מתחלפים בכל סבב</small></div><div class="group">${Object.entries(CONS).map(([k,v])=>`<button data-act="cons" data-v="${k}" class="${state.cons===k?'on':''}">${v}</button>`).join('')}</div></div>
+   <div class="field"><div class="fl">טונליות אקראית<small>מעבר לטונליות חדשה כל כמה סבבים</small></div><div class="inl"><label class="lbl" for="randEvery">כל</label><select id="randEvery">${[1,2,4,8].map(n=>`<option value="${n}"${n==state.randEvery?' selected':''}>${n}</option>`).join('')}</select><span class="lbl">סבבים</span>${sw('swRand',state.randKey,'randKey')}</div></div>
+   <div class="field"><div class="fl">מאמן מהירות<small>העלאת טמפו הדרגתית עד לתקרה</small></div><div class="inl"><span class="lbl">+</span><select id="speedStep" aria-label="תוספת BPM">${[2,4,5,10].map(n=>`<option value="${n}"${n==state.speedStep?' selected':''}>${n}</option>`).join('')}</select><span class="lbl">כל</span><select id="speedEvery" aria-label="כל כמה סבבים">${[1,2,4].map(n=>`<option value="${n}"${n==state.speedEvery?' selected':''}>${n}</option>`).join('')}</select><span class="lbl">עד</span><input type="number" id="speedMax" min="40" max="300" value="${state.speedMax}" aria-label="טמפו מרבי">${sw('swSpeed',state.speed,'speed')}</div></div>`;
+}
+function libRoman(bars){const out=[];parseBars(bars).flat().forEach(c=>{const r=roman(c.d,c.q);if(out[out.length-1]!==r)out.push(r);});return out.slice(0,8).join(' – ');}
+function renderLib(){
+  const saved=lsGet('hloops.saved')||[];
+  let h=`<div class="cardhead"><h2>ספריית מהלכים</h2></div><div class="libtabs">${CATS.map(([k,v])=>`<button class="chip${state.libCat===k?' on':''}" data-act="lib-cat" data-v="${k}">${v}</button>`).join('')}</div>`;
+  if(state.libCat==='mine'){
+    h+=saved.length?`<div class="libgrid" style="grid-template-columns:1fr">${saved.map((s,i)=>`<div class="mine"><span class="n" data-act="loadsaved" data-i="${i}" role="button" tabindex="0">${s.name}<small class="lbl"> · ${nm(keyTonic(s.data.tonic,s.data.home))} · ${s.data.bars.length} תיבות</small></span><button class="act warn" data-act="delsaved" data-i="${i}">מחק</button></div>`).join('')}</div>`:`<p class="empty">עוד לא שמרתם לופים. ערכו מהלך ושמרו אותו כאן.</p>`;
+    h+=`<div class="saverow"><input type="text" id="saveName" placeholder="שם ללופ הנוכחי" value="${(state.name||'').replace(/"/g,'&quot;')}"><button class="act" data-act="save">שמור</button></div><p class="empty" style="font-size:12px;margin:6px 0 0">נשמר בדפדפן הזה בלבד.</p>`;
+  }else{
+    h+=`<div class="libgrid">${LIB.filter(t=>t.cat===state.libCat).map(t=>`<button class="lcard${state.lib===t.id?' on':''}" data-act="lib" data-id="${t.id}"><span class="t">${t.name}</span><span class="rr">${libRoman(t.bars)}</span><span class="meta"><span class="lv">${[1,2,3].map(n=>`<i class="${n<=t.lvl?'f':''}"></i>`).join('')}</span>${['בסיסי','בינוני','מתקדם'][t.lvl-1]} · ${nm(keyTonic(t.tonic,t.home))} · ${STY[t.drums].he} · ${t.bpm}</span></button>`).join('')}</div>`;
+  }
+  $('libCard').innerHTML=h;
+}
+function renderGloss(){const L=R();const ids=Object.keys(SC).filter(k=>!SC[k].tri);
+  $('glList').innerHTML=ids.map(id=>{const s=SC[id];return`<div class="gi"><b>${s.he} <span class="lbl" style="direction:ltr;display:inline-block">${s.en}</span></b><span class="f">${acc2(s.f).split(' ').join(' · ')}</span><span class="ns">${spellScale(L.T,id).map(nm).join(' ')}</span><p>${s.c}</p></div>`;}).join('');}
+function pickCons(){const L=R();const it=L.loop[0];const names=new Map(it.notes.map(n=>[pc(n),nm(n)]));const pcs=[...names.keys()];
+  if(state.cons==='three'){const a=[...pcs].sort(()=>Math.random()-.5).slice(0,3).sort((x,y)=>mod(x-L.tonic)-mod(y-L.tonic));consSel={pcs:a,names:a.map(p=>names.get(p))};}
+  else if(state.cons==='one'){const cnt=new Map();L.chords.forEach(c=>c.recs.S[0].notes.forEach(o=>{const p=pc(o.n);if(o.role!=='av')cnt.set(p,(cnt.get(p)||0)+1);}));let best=pcs[0],bv=-1;[...cnt.entries()].sort(()=>Math.random()-.5).forEach(([p,v])=>{if(v>bv){bv=v;best=p;}});
+    const nmm=names.get(best)||nm(byPc(best,L.T.a<0));consSel={pcs:[best],names:[nmm]};}
+  else consSel=null;}
+function renderAll(){renderTransport();renderStrip();renderNow();renderAcc();renderPrac();renderLib();renderGloss();}
+
+/* ================= EVENTS ================= */
+let pd=null,moved=false;
+document.addEventListener('pointerdown',e=>{pd={x:e.clientX,y:e.clientY};moved=false;},{passive:true});
+document.addEventListener('pointermove',e=>{if(pd&&(Math.abs(e.clientX-pd.x)>9||Math.abs(e.clientY-pd.y)>9))moved=true;},{passive:true});
+document.addEventListener('pointercancel',()=>{moved=true;},{passive:true});
+document.addEventListener('click',e=>{const el=e.target.closest('[data-act]');if(!el)return;
+  if(el.tagName==='INPUT'&&el.type==='checkbox'){act(el.dataset.act,el);return;}
+  if(moved&&e.detail>0){moved=false;e.preventDefault();return;}moved=false;act(el.dataset.act,el);});
+document.addEventListener('keydown',e=>{if(e.code==='Space'&&!/INPUT|SELECT|TEXTAREA|BUTTON/.test(document.activeElement.tagName)){e.preventDefault();act('play');}
+  if(e.key==='Enter'&&e.target.dataset&&e.target.dataset.act&&e.target.getAttribute('role')==='button')act(e.target.dataset.act,e.target);});
+let taps=[];
+function setBpm(v){state.bpm=Math.max(40,Math.min(260,Math.round(v)));renderTransport();saveLast();}
+function edited(){Rc=null;if(editBar!=null&&editBar>=state.bars.length)editBar=state.bars.length-1;state.lib=null;renderStrip();renderNow();renderLib();renderTransport();saveLast();}
+function act(a,el){
+  const v=el&&el.dataset?el.dataset.v:null;
+  switch(a){
+  case'play':playing?stop():start();break;
+  case'bpm-':setBpm(state.bpm-1);break;case'bpm+':setBpm(state.bpm+1);break;
+  case'tap':{const n=performance.now();taps=taps.filter(t=>n-t<2200);taps.push(n);if(taps.length>1){const iv=(taps[taps.length-1]-taps[0])/(taps.length-1);setBpm(60000/iv);}break;}
+  case'meter':state.meter=v;if(STY[state.drums].m!==v)state.drums=METER[v].def;renderTransport();renderAcc();saveLast();break;
+  case'countIn':state.countIn=!state.countIn;renderTransport();saveLast();break;
+  case'loopT':state.loop=!state.loop;renderTransport();saveLast();break;
+  case'view':state.view=v;renderNow();saveLast();break;
+  case'tier':state.tier=v;renderNow();saveLast();break;
+  case'opt':state.pick[state.tier]=+el.dataset.i;renderNow();break;
+  case'loopitem':state.loopPick=+el.dataset.i;renderNow();break;
+  case'inst':state.inst=v;renderNow();saveLast();break;
+  case'tile':{const i=+el.dataset.i;const c=R().chords[i];if(!playing){pos=i;state.pick={safe:0,color:0,out:0};}editBar=c.bar;renderStrip();renderNow();renderTransport();break;}
+  case'chains':state.chains=!state.chains;edited();break;
+  case'follow':state.follow=!state.follow;renderStrip();saveLast();break;
+  case'bar-append':state.bars.push([{d:'1',q:'maj7'}]);editBar=state.bars.length-1;edited();requestAnimationFrame(()=>{const w=$('stripWrap');w.scrollLeft=w.scrollWidth;syncScroller();});break;
+  case'ed-close':editBar=null;renderStrip();break;
+  case'bar-add':state.bars.splice(editBar+1,0,JSON.parse(JSON.stringify(state.bars[editBar])));editBar++;edited();break;
+  case'bar-dup':state.bars.splice(editBar+1,0,JSON.parse(JSON.stringify(state.bars[editBar])));edited();break;
+  case'bar-del':if(state.bars.length>1){state.bars.splice(editBar,1);editBar=null;pos=0;edited();}break;
+  case'ed-q':state.bars[editBar][+el.dataset.k].q=el.dataset.q;edited();break;
+  case'ed-add2':state.bars[editBar].push({...state.bars[editBar][0]});edited();break;
+  case'ed-rm2':state.bars[editBar].splice(1,1);edited();break;
+  case'lib-cat':state.libCat=v;renderLib();saveLast();break;
+  case'lib':{const was=playing;if(was)stop();applyTemplate(LIB.find(t=>t.id===el.dataset.id));Rc=null;renderAll();saveLast();if(was)start();break;}
+  case'save':{const name=($('saveName').value||'').trim()||'הלופ שלי';const s=lsGet('hloops.saved')||[];state.name=name;
+    s.unshift({name,data:{tonic:state.tonic,home:state.home,meter:state.meter,bpm:state.bpm,bars:state.bars,chains:state.chains,blues:state.blues,drums:state.drums,bass:state.bass,comp:state.comp}});lsSet('hloops.saved',s.slice(0,50));renderLib();renderStrip();saveLast();break;}
+  case'loadsaved':{const s=(lsGet('hloops.saved')||[])[+el.dataset.i];if(!s)break;const was=playing;if(was)stop();applyTemplate({...s.data,name:s.name,id:null});Rc=null;renderAll();saveLast();if(was)start();break;}
+  case'delsaved':{if(!el.classList.contains('sure')){el.classList.add('sure');el.textContent='בטוח?';setTimeout(()=>{if(el.isConnected){el.classList.remove('sure');el.textContent='מחק';}},2500);break;}
+    const s=lsGet('hloops.saved')||[];s.splice(+el.dataset.i,1);lsSet('hloops.saved',s);renderLib();break;}
+  case'drums':state.drums=v;renderAcc();saveLast();break;
+  case'bass':state.bass=v;renderAcc();saveLast();break;
+  case'comp':state.comp=v;renderAcc();saveLast();break;
+  case'mute':{const ch=el.dataset.ch;state.mix[ch].m=!state.mix[ch].m;applyMix();renderAcc();saveLast();break;}
+  case'trade':state.trade=el.checked;if(!state.trade)tradeNow=false;renderNow();saveLast();break;
+  case'target':state.target=el.checked;renderPrac();renderNow();saveLast();break;
+  case'cue':state.cue=!state.cue;renderPrac();saveLast();break;
+  case'rotate':state.rotate=el.checked;saveLast();break;
+  case'cons':state.cons=v;pickCons();renderPrac();renderDots();renderNow();saveLast();break;
+  case'randKey':state.randKey=el.checked;saveLast();break;
+  case'speed':state.speed=el.checked;saveLast();break;
+  }
+}
+document.addEventListener('input',e=>{const t=e.target;
+  if(t.id==='bpmRange')setBpm(+t.value);
+  else if(t.dataset.vol){state.mix[t.dataset.vol].v=+t.value;applyMix();saveLast();}
+  else if(t.id==='stripScroll'){const w=$('stripWrap');w.scrollLeft=(w.scrollWidth-w.clientWidth)*t.value/1000;}});
+document.addEventListener('change',e=>{const t=e.target;
+  if(t.id==='keySel'){state.tonic=+t.value;prevV=null;Rc=null;renderAll();saveLast();}
+  else if(t.id==='homeSel'){state.home=t.value;edited();renderGloss();}
+  else if(t.dataset.edroot!=null){state.bars[editBar][+t.dataset.edroot].d=t.value;edited();}
+  else if(t.id==='randEvery'){state.randEvery=+t.value;saveLast();}
+  else if(t.id==='speedStep'){state.speedStep=+t.value;saveLast();}
+  else if(t.id==='speedEvery'){state.speedEvery=+t.value;saveLast();}
+  else if(t.id==='speedMax'){state.speedMax=Math.max(40,Math.min(300,+t.value||200));saveLast();}});
+$('stripWrap').addEventListener('scroll',()=>{const w=$('stripWrap'),max=w.scrollWidth-w.clientWidth;$('stripScroll').value=max>0?Math.round(w.scrollLeft/max*1000):0;},{passive:true});
+let rz=null;addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(renderStrip,150);});
+setInterval(()=>{const n=performance.now();if(playing){elapsed+=(n-lastTick)/1000;}lastTick=n;const s=Math.floor(elapsed);$('tElapsed').textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');},250);
+
+/* ================= BOOT ================= */
+(function boot(){
+  const last=lsGet('hloops.last');
+  if(last&&Array.isArray(last.bars)&&last.bars.length){try{state=Object.assign(JSON.parse(JSON.stringify(DEF)),last);state.mix=Object.assign(JSON.parse(JSON.stringify(DEF.mix)),last.mix||{});R();}catch(e){state=JSON.parse(JSON.stringify(DEF));applyTemplate(LIB.find(t=>t.id==='jz5'));}}
+  else applyTemplate(LIB.find(t=>t.id==='jz5'));
+  if(!STY[state.drums]||STY[state.drums].m!==state.meter)state.drums=METER[state.meter].def;
+  renderAll();requestAnimationFrame(frame);
+  setTimeout(()=>{const r=selfTest();const b=$('testBadge');
+    if(r.err.length){b.className='test bad';b.textContent=`בדיקה עצמית: ${r.err.length} בעיות מתוך ${r.checked} המלצות`;b.title=r.err.slice(0,20).join('\n');console.warn(r.err);}
+    else{b.className='test ok';b.textContent=`✓ בדיקה עצמית: ${r.checked.toLocaleString('he-IL')} המלצות "בטוח" ו"צבעוני" בכל 12 הטונליות מכילות את צלילי האקורד`;}},400);
+})();
+</script>
+</body></html>
