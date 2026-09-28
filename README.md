@@ -1,11 +1,11 @@
-# Loop Lab
+# Loop Lab · Progression Skills
 
 **Improvisation practice over chord progressions.**
 Backing loops with scale suggestions for every chord, shown on keyboard and guitar.
 
 🎹 **Try it:** https://boazbareket1.github.io/loop-lab
 
-![Loop Lab](screenshot.png)
+![Loop Lab · Progression Skills](screenshot.png)
 
 ## What it does
 
@@ -30,7 +30,7 @@ A single HTML file with no build step and no dependencies. Sound is made with th
 
 <div dir="rtl">
 
-# Loop Lab
+# Loop Lab · Progression Skills
 
 **תרגול אלתור על מהלכים הרמוניים.**
 לופים לליווי עם המלצות סולמות לכל אקורד, על קלידים ועל צוואר גיטרה.
